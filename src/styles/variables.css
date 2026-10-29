@@ -1,15 +1,13 @@
 :root {
-  /* Cores Principais */
-  --color-base: #0D0D11;        /* Textos e contrastes principais */
-  --color-primary: #000080;     /* Azul institucional / botões principais */
+  /* Tokens de Cor */
+  --color-base: #0D0D11;        /* Textos e contraste principal */
+  --color-primary: #000080;     /* Azul Institucional / Ações */
   --color-accent: #71226B;      /* Magenta/Roxo para timer ativo e alertas */
-  
-  /* Fundos e Estrutura */
-  --color-surface: #F7F7F9;     /* Background suave da aplicação */
-  --color-card-bg: #FFFFFF;     /* Fundo de cards, modais e tabelas */
-  --color-border: #E5E7EB;      /* Linhas divisórias e bordas sutis */
-  
-  /* Estados e Auxiliares */
-  --color-text-muted: #6B7280;  /* Subtítulos e legendas */
-  --color-danger: #D32F2F;      /* Ações destrutivas */
+  --color-surface: #F7F7F9;     /* Fundo suave da tela (sem branco puro) */
+  --color-card-bg: #FFFFFF;     /* Fundo de cartões e tabelas */
+  --color-border: #E5E7EB;      /* Divisores e bordas */
+  --color-text-muted: #6B7280;  /* Legendas e rótulos secundários */
+  --color-text-subtle: #9CA3AF;
+  --color-hover: #F3F4F6;
+  --color-danger: #D32F2F;
 }

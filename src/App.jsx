@@ -1,33 +1,45 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import { Login } from './pages/Login/Login';
+import { Sidebar } from './components/Sidebar/Sidebar';
+import { Clientes } from './pages/Clientes/Clientes';
 import './App.css';
 
 function MainApp() {
-  const { user, profile, isAdmin, signOut } = useAuth();
+  const { user } = useAuth();
+  const [currentView, setCurrentView] = useState('clientes');
 
   if (!user) {
     return <Login />;
   }
 
+  const handleSelectClient = (client) => {
+    // Será conectado na próxima etapa (Página 3 - Detalhes do Cliente)
+    alert(`Cliente selecionado: ${client.name}. Na próxima etapa abriremos a tela de atividades.`);
+  };
+
+  const handleOpenNewClientModal = () => {
+    // Será conectado com o ModalCliente (Página 2 do wireframe)
+    alert('Abrir modal de cadastro de novo cliente.');
+  };
+
   return (
-    <div style={{ padding: '32px', maxWidth: '800px', margin: '0 auto' }}>
-      <h1>Painel Principal</h1>
-      <p>Logado como: <strong>{profile?.full_name || user.email}</strong></p>
-      <p>Perfil de acesso: <strong>{profile?.role}</strong> {isAdmin && '(Acesso total de Administrador)'}</p>
-      <button 
-        onClick={signOut}
-        style={{
-          padding: '8px 16px',
-          backgroundColor: '#0D0D11',
-          color: '#FFF',
-          border: 'none',
-          borderRadius: '4px',
-          cursor: 'pointer'
-        }}
-      >
-        Sair
-      </button>
+    <div className="app-layout">
+      <Sidebar currentView={currentView} setCurrentView={setCurrentView} />
+      <main className="app-main-content">
+        {currentView === 'clientes' && (
+          <Clientes
+            onSelectClient={handleSelectClient}
+            onOpenNewClientModal={handleOpenNewClientModal}
+          />
+        )}
+        {currentView === 'relatorios' && (
+          <div style={{ padding: '40px' }}>
+            <h2>Área de Relatórios</h2>
+            <p style={{ color: 'var(--color-text-muted)' }}>Módulo em desenvolvimento.</p>
+          </div>
+        )}
+      </main>
     </div>
   );
 }
