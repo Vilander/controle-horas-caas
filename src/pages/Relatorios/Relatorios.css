@@ -1,0 +1,236 @@
+.relatorios-page {
+  padding: 32px 40px;
+  flex: 1;
+  max-width: 1200px;
+}
+
+.relatorios-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 24px;
+}
+
+.relatorios-breadcrumb {
+  font-size: 12px;
+  color: var(--color-text-muted);
+  display: block;
+  margin-bottom: 4px;
+}
+
+.relatorios-title {
+  font-size: 28px;
+  font-weight: 700;
+  color: var(--color-base);
+  margin-bottom: 4px;
+}
+
+.relatorios-subtitle {
+  font-size: 14px;
+  color: var(--color-text-muted);
+}
+
+.relatorios-actions {
+  display: flex;
+  gap: 10px;
+}
+
+/* Card de Filtros */
+.relatorios-filter-card {
+  background-color: var(--color-card-bg);
+  border: 1px solid var(--color-border);
+  border-radius: 8px;
+  padding: 18px 24px;
+  display: flex;
+  align-items: flex-end;
+  gap: 16px;
+  margin-bottom: 24px;
+}
+
+.filter-group {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  flex: 1;
+}
+
+.filter-group label {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--color-base);
+}
+
+.filter-group input,
+.filter-group select {
+  height: 38px;
+  padding: 0 12px;
+  border: 1px solid var(--color-border);
+  border-radius: 6px;
+  font-size: 13px;
+  background-color: #FFFFFF;
+  color: var(--color-base);
+  outline: none;
+}
+
+.btn-generate {
+  height: 38px;
+  white-space: nowrap;
+}
+
+/* Grid de Métricas */
+.relatorios-metrics-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 16px;
+  margin-bottom: 24px;
+}
+
+/* Tabela Consolidada */
+.relatorios-table-card {
+  background-color: var(--color-card-bg);
+  border: 1px solid var(--color-border);
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.report-table-header {
+  padding: 16px 20px;
+  background-color: #FAFAFB;
+  border-bottom: 1px solid var(--color-border);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.report-table-header h3 {
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--color-base);
+  margin: 0;
+}
+
+.report-table-header span {
+  font-size: 12px;
+  color: var(--color-text-muted);
+}
+
+.relatorios-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.relatorios-table th {
+  padding: 12px 18px;
+  background-color: #FAFAFB;
+  border-bottom: 1px solid var(--color-border);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  color: var(--color-text-muted);
+  text-align: left;
+}
+
+.relatorios-table td {
+  padding: 14px 18px;
+  border-bottom: 1px solid var(--color-border);
+  font-size: 13px;
+  color: var(--color-base);
+}
+
+.row-act-title {
+  font-weight: 600;
+  color: var(--color-base);
+}
+
+.row-act-desc {
+  font-size: 12px;
+  color: var(--color-text-muted);
+  margin-top: 2px;
+}
+
+.relatorios-table tfoot td {
+  background-color: #FAFAFB;
+  font-weight: 700;
+  border-bottom: none;
+}
+
+.report-notice {
+  padding: 16px 20px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 11px;
+  color: var(--color-text-subtle);
+  border-top: 1px solid var(--color-border);
+}
+
+/* Regras de Impressão (PDF Executivo) */
+@media print {
+  body {
+    background-color: #FFFFFF !important;
+  }
+
+  .sidebar-container,
+  .no-print {
+    display: none !important;
+  }
+
+  .relatorios-page {
+    padding: 0 !important;
+    max-width: 100% !important;
+  }
+
+  .relatorios-table-card,
+  .metric-card {
+    border: 1px solid #CCCCCC !important;
+    box-shadow: none !important;
+  }
+}
+
+/* Botão com Spinner e Feedback */
+.btn-generate {
+  height: 38px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 0 18px;
+  background-color: var(--color-primary, #000080);
+  color: #FFFFFF;
+  border: none;
+  border-radius: 6px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: opacity 0.2s ease, background-color 0.2s ease;
+}
+
+.btn-generate:hover:not(:disabled) {
+  opacity: 0.92;
+}
+
+.btn-generate:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+}
+
+.btn-loading {
+  background-color: #000066; /* Tom mais escuro do azul marinho durante o fetch */
+}
+
+/* Spinner circular minimalista */
+.spinner-icon {
+  width: 14px;
+  height: 14px;
+  border: 2px solid rgba(255, 255, 255, 0.35);
+  border-top-color: #FFFFFF;
+  border-radius: 50%;
+  animation: spin 0.7s linear infinite;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
