@@ -13,7 +13,7 @@
 
 .relatorios-breadcrumb {
   font-size: 12px;
-  color: var(--color-text-muted);
+  color: var(--color-text-muted, #6B7280);
   display: block;
   margin-bottom: 4px;
 }
@@ -21,13 +21,13 @@
 .relatorios-title {
   font-size: 28px;
   font-weight: 700;
-  color: var(--color-base);
+  color: var(--color-base, #0D0D11);
   margin-bottom: 4px;
 }
 
 .relatorios-subtitle {
   font-size: 14px;
-  color: var(--color-text-muted);
+  color: var(--color-text-muted, #6B7280);
 }
 
 .relatorios-actions {
@@ -37,8 +37,8 @@
 
 /* Card de Filtros */
 .relatorios-filter-card {
-  background-color: var(--color-card-bg);
-  border: 1px solid var(--color-border);
+  background-color: var(--color-card-bg, #FFFFFF);
+  border: 1px solid var(--color-border, #E5E7EB);
   border-radius: 8px;
   padding: 18px 24px;
   display: flex;
@@ -57,134 +57,19 @@
 .filter-group label {
   font-size: 12px;
   font-weight: 600;
-  color: var(--color-base);
+  color: var(--color-base, #0D0D11);
 }
 
 .filter-group input,
 .filter-group select {
   height: 38px;
   padding: 0 12px;
-  border: 1px solid var(--color-border);
+  border: 1px solid var(--color-border, #E5E7EB);
   border-radius: 6px;
   font-size: 13px;
   background-color: #FFFFFF;
-  color: var(--color-base);
+  color: var(--color-base, #0D0D11);
   outline: none;
-}
-
-.btn-generate {
-  height: 38px;
-  white-space: nowrap;
-}
-
-/* Grid de Métricas */
-.relatorios-metrics-grid {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 16px;
-  margin-bottom: 24px;
-}
-
-/* Tabela Consolidada */
-.relatorios-table-card {
-  background-color: var(--color-card-bg);
-  border: 1px solid var(--color-border);
-  border-radius: 8px;
-  overflow: hidden;
-}
-
-.report-table-header {
-  padding: 16px 20px;
-  background-color: #FAFAFB;
-  border-bottom: 1px solid var(--color-border);
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
-
-.report-table-header h3 {
-  font-size: 15px;
-  font-weight: 700;
-  color: var(--color-base);
-  margin: 0;
-}
-
-.report-table-header span {
-  font-size: 12px;
-  color: var(--color-text-muted);
-}
-
-.relatorios-table {
-  width: 100%;
-  border-collapse: collapse;
-}
-
-.relatorios-table th {
-  padding: 12px 18px;
-  background-color: #FAFAFB;
-  border-bottom: 1px solid var(--color-border);
-  font-size: 11px;
-  font-weight: 700;
-  letter-spacing: 0.05em;
-  color: var(--color-text-muted);
-  text-align: left;
-}
-
-.relatorios-table td {
-  padding: 14px 18px;
-  border-bottom: 1px solid var(--color-border);
-  font-size: 13px;
-  color: var(--color-base);
-}
-
-.row-act-title {
-  font-weight: 600;
-  color: var(--color-base);
-}
-
-.row-act-desc {
-  font-size: 12px;
-  color: var(--color-text-muted);
-  margin-top: 2px;
-}
-
-.relatorios-table tfoot td {
-  background-color: #FAFAFB;
-  font-weight: 700;
-  border-bottom: none;
-}
-
-.report-notice {
-  padding: 16px 20px;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  font-size: 11px;
-  color: var(--color-text-subtle);
-  border-top: 1px solid var(--color-border);
-}
-
-/* Regras de Impressão (PDF Executivo) */
-@media print {
-  body {
-    background-color: #FFFFFF !important;
-  }
-
-  .sidebar-container,
-  .no-print {
-    display: none !important;
-  }
-
-  .relatorios-page {
-    padding: 0 !important;
-    max-width: 100% !important;
-  }
-
-  .relatorios-table-card,
-  .metric-card {
-    border: 1px solid #CCCCCC !important;
-    box-shadow: none !important;
-  }
 }
 
 /* Botão com Spinner e Feedback */
@@ -216,10 +101,9 @@
 }
 
 .btn-loading {
-  background-color: #000066; /* Tom mais escuro do azul marinho durante o fetch */
+  background-color: #000066;
 }
 
-/* Spinner circular minimalista */
 .spinner-icon {
   width: 14px;
   height: 14px;
@@ -232,5 +116,260 @@
 @keyframes spin {
   to {
     transform: rotate(360deg);
+  }
+}
+
+/* Grid de Métricas */
+.relatorios-metrics-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 16px;
+  margin-bottom: 24px;
+}
+
+/* Tabela Consolidada */
+.relatorios-table-card {
+  background-color: var(--color-card-bg, #FFFFFF);
+  border: 1px solid var(--color-border, #E5E7EB);
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.report-table-header {
+  padding: 16px 20px;
+  background-color: #FAFAFB;
+  border-bottom: 1px solid var(--color-border, #E5E7EB);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.report-table-header h3 {
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--color-base, #0D0D11);
+  margin: 0;
+}
+
+.report-table-header span {
+  font-size: 12px;
+  color: var(--color-text-muted, #6B7280);
+}
+
+.relatorios-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.relatorios-table th {
+  padding: 12px 18px;
+  background-color: #FAFAFB;
+  border-bottom: 1px solid var(--color-border, #E5E7EB);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  color: var(--color-text-muted, #6B7280);
+  text-align: left;
+}
+
+.relatorios-table td {
+  padding: 14px 18px;
+  border-bottom: 1px solid var(--color-border, #E5E7EB);
+  font-size: 13px;
+  color: var(--color-base, #0D0D11);
+}
+
+.tr-summary-row {
+  cursor: pointer;
+  transition: background-color 0.15s ease;
+}
+
+.tr-summary-row:hover {
+  background-color: var(--color-hover, #F3F4F6);
+}
+
+.row-title-area {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+}
+
+.expand-indicator {
+  font-size: 14px;
+  color: var(--color-primary, #000080);
+  line-height: 1.4;
+  user-select: none;
+}
+
+.row-act-title {
+  font-weight: 600;
+  color: var(--color-base, #0D0D11);
+}
+
+.row-act-desc {
+  font-size: 12px;
+  color: var(--color-text-muted, #6B7280);
+  margin-top: 2px;
+}
+
+/* Área de Registros em Linhas Verticais */
+.tr-details-subrow.hidden-screen {
+  display: none;
+}
+
+.tr-details-subrow.visible-screen {
+  display: table-row;
+}
+
+.td-details-container {
+  padding: 10px 18px 14px 36px !important;
+  background-color: #FAF5F9;
+  border-bottom: 1px solid var(--color-border, #E5E7EB);
+}
+
+.details-subtable-wrapper {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.details-subtitle {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  color: var(--color-accent, #71226B);
+  text-transform: uppercase;
+}
+
+.details-rows-list {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin-top: 4px;
+}
+
+.entry-row-item {
+  background-color: #FFFFFF;
+  border: 1px solid var(--color-border, #E5E7EB);
+  border-radius: 4px;
+  padding: 8px 12px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 12px;
+  transition: background-color 0.15s ease;
+}
+
+.entry-row-item:hover {
+  background-color: #FAFAFA;
+}
+
+.entry-row-datetime {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 200px;
+}
+
+.badge-date {
+  font-weight: 700;
+  color: var(--color-base, #0D0D11);
+}
+
+.badge-time {
+  color: var(--color-text-muted, #6B7280);
+}
+
+.entry-row-duration {
+  min-width: 100px;
+}
+
+.badge-dur {
+  font-weight: 600;
+  color: var(--color-accent, #71226B);
+}
+
+.entry-row-meta {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-size: 11px;
+}
+
+.badge-origin {
+  color: var(--color-text-muted, #6B7280);
+  background-color: #F3F4F6;
+  padding: 2px 6px;
+  border-radius: 4px;
+}
+
+.badge-user {
+  font-weight: 500;
+  color: var(--color-primary, #000080);
+}
+
+.relatorios-table tfoot td {
+  background-color: #FAFAFB;
+  font-weight: 700;
+  border-bottom: none;
+}
+
+.report-notice {
+  padding: 16px 20px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 11px;
+  color: var(--color-text-subtle, #9CA3AF);
+  border-top: 1px solid var(--color-border, #E5E7EB);
+}
+
+/* Regras de Impressão e PDF */
+@media print {
+  body {
+    background-color: #FFFFFF !important;
+  }
+
+  .sidebar-container,
+  .no-print {
+    display: none !important;
+  }
+
+  .relatorios-page {
+    padding: 0 !important;
+    max-width: 100% !important;
+  }
+
+  .relatorios-table-card,
+  .metric-card {
+    border: 1px solid #CCCCCC !important;
+    box-shadow: none !important;
+  }
+
+  .tr-details-subrow.hidden-screen,
+  .tr-details-subrow.visible-screen {
+    display: table-row !important;
+  }
+
+  .td-details-container {
+    background-color: #FAFAFA !important;
+  }
+
+  .details-rows-list {
+    gap: 2px;
+  }
+
+  .entry-row-item {
+    border: none !important;
+    border-bottom: 1px dashed #D1D5DB !important;
+    border-radius: 0 !important;
+    padding: 4px 0 !important;
+    background-color: transparent !important;
+    page-break-inside: avoid;
+  }
+
+  .badge-origin {
+    background-color: transparent !important;
+    border: 1px solid #E5E7EB;
   }
 }

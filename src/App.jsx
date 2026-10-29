@@ -4,12 +4,16 @@ import { Login } from './pages/Login/Login';
 import { Sidebar } from './components/Sidebar/Sidebar';
 import { Clientes } from './pages/Clientes/Clientes';
 import { DetalheCliente } from './pages/DetalheCliente/DetalheCliente';
+import { Relatorios } from './pages/Relatorios/Relatorios';
+
+// Modais da Aplicação
 import { ModalCliente } from './components/ModalCliente/ModalCliente';
 import { ModalAtividade } from './components/ModalAtividade/ModalAtividade';
 import { ModalLancamento } from './components/ModalLancamento/ModalLancamento';
 import { ModalEditarAtividade } from './components/ModalAtividade/ModalEditarAtividade';
 import { ModalExcluirAtividade } from './components/ModalExcluir/ModalExcluirAtividade';
-import { Relatorios } from './pages/Relatorios/Relatorios';
+import { ModalProrrogar } from './components/ModalProrrogar/ModalProrrogar';
+import { ModalUsuario } from './components/ModalUsuario/ModalUsuario';
 
 import './App.css';
 
@@ -18,17 +22,23 @@ function MainApp() {
   const [currentView, setCurrentView] = useState('clientes');
   const [selectedClient, setSelectedClient] = useState(null);
 
-  // Estados dos Modais
+  // Estados dos Modais de Clientes e Contratos
   const [isClientModalOpen, setIsClientModalOpen] = useState(false);
+  const [clientToEdit, setClientToEdit] = useState(null);
+  const [clientToProrrogar, setClientToProrrogar] = useState(null);
+
+  // Estado do Modal de Usuários (Admin)
+  const [isUserModalOpen, setIsUserModalOpen] = useState(false);
+
+  // Estados dos Modais de Atividades e Apontamentos
   const [isActivityModalOpen, setIsActivityModalOpen] = useState(false);
   const [isManualModalOpen, setIsManualModalOpen] = useState(false);
+  const [editingActivity, setEditingActivity] = useState(null);
+  const [deletingActivity, setDeletingActivity] = useState(null);
 
-  // Lista de atividades do cliente corrente para o select do lançamento manual
+  // Lista de atividades do cliente selecionado para seleção no apontamento manual
   const [clientActivities, setClientActivities] = useState([]);
   const [refreshTrigger, setRefreshTrigger] = useState(0);
-
-  const [editingActivity, setEditingActivity] = useState(null);
-  const [deletingActivity, setDeletingActivity] = useState(null); 
 
   if (!user) {
     return <Login />;
@@ -43,6 +53,10 @@ function MainApp() {
     setRefreshTrigger((prev) => prev + 1);
   };
 
+  const triggerRefresh = () => {
+    setRefreshTrigger((prev) => prev + 1);
+  };
+
   return (
     <div className="app-layout">
       <Sidebar
@@ -54,14 +68,25 @@ function MainApp() {
       />
 
       <main className="app-main-content">
+        {/* Rota 1: Lista de Clientes */}
         {currentView === 'clientes' && !selectedClient && (
           <Clientes
             key={refreshTrigger}
             onSelectClient={handleSelectClient}
-            onOpenNewClientModal={() => setIsClientModalOpen(true)}
+            onOpenNewClientModal={() => {
+              setClientToEdit(null);
+              setIsClientModalOpen(true);
+            }}
+            onOpenEditClientModal={(client) => {
+              setClientToEdit(client);
+              setIsClientModalOpen(true);
+            }}
+            onOpenNewUserModal={() => setIsUserModalOpen(true)}
+            onOpenProrrogarModal={(client) => setClientToProrrogar(client)}
           />
         )}
 
+        {/* Rota 2: Detalhes e Planilha de Atividades do Cliente */}
         {currentView === 'clientes' && selectedClient && (
           <DetalheCliente
             key={refreshTrigger}
@@ -75,50 +100,73 @@ function MainApp() {
           />
         )}
 
+        {/* Rota 3: Relatório de Horas e Fechamento */}
         {currentView === 'relatorios' && (
           <Relatorios initialClientId={selectedClient?.id} />
         )}
       </main>
 
-      {/* 1. Modal de Cadastro de Cliente */}
+      {/* --- DIÁLOGOS E MODAIS --- */}
+
+      {/* 1. Cadastro e Edição de Clientes (com Vigência de Contrato) */}
       <ModalCliente
         isOpen={isClientModalOpen}
-        onClose={() => setIsClientModalOpen(false)}
-        onClientCreated={() => setRefreshTrigger((prev) => prev + 1)}
+        clientToEdit={clientToEdit}
+        onClose={() => {
+          setIsClientModalOpen(false);
+          setClientToEdit(null);
+        }}
+        onClientSaved={triggerRefresh}
       />
 
-      {/* 2. Modal de Nova Atividade */}
+      {/* 2. Prorrogação ou Encerramento de Contrato */}
+      <ModalProrrogar
+        isOpen={!!clientToProrrogar}
+        client={clientToProrrogar}
+        onClose={() => setClientToProrrogar(null)}
+        onUpdated={triggerRefresh}
+      />
+
+      {/* 3. Cadastro de Novo Usuário (Privilégios Admin / Consultant) */}
+      <ModalUsuario
+        isOpen={isUserModalOpen}
+        onClose={() => setIsUserModalOpen(false)}
+        onUserCreated={triggerRefresh}
+      />
+
+      {/* 4. Nova Atividade */}
       <ModalAtividade
         isOpen={isActivityModalOpen}
         client={selectedClient}
         onClose={() => setIsActivityModalOpen(false)}
-        onActivityCreated={() => setRefreshTrigger((prev) => prev + 1)}
+        onActivityCreated={triggerRefresh}
       />
 
-      {/* 3. Modal de Lançamento Manual */}
+      {/* 5. Lançamento Manual de Horas */}
       <ModalLancamento
         isOpen={isManualModalOpen}
         client={selectedClient}
         activities={clientActivities}
         onClose={() => setIsManualModalOpen(false)}
-        onEntryCreated={() => setRefreshTrigger((prev) => prev + 1)}
+        onEntryCreated={triggerRefresh}
       />
 
-      {/* 4. Modal de Edição de Atividade */}
+      {/* 6. Edição de Atividade, Responsáveis e Correção de Apontamentos */}
       <ModalEditarAtividade
         isOpen={!!editingActivity}
         activity={editingActivity}
         client={selectedClient}
         onClose={() => setEditingActivity(null)}
-        onUpdated={() => setRefreshTrigger((prev) => prev + 1)}
+        onUpdated={triggerRefresh}
       />
 
+      {/* 7. Exclusão de Atividade */}
       <ModalExcluirAtividade
         isOpen={!!deletingActivity}
         activity={deletingActivity}
         client={selectedClient}
         onClose={() => setDeletingActivity(null)}
-        onDeleted={() => setRefreshTrigger((prev) => prev + 1)}
+        onDeleted={triggerRefresh}
       />
     </div>
   );

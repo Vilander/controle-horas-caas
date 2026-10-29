@@ -92,7 +92,7 @@ export function DetalheCliente({
     }
   }, [client?.id]);
 
-  // Controlo do Cronómetro
+  // Controlo do Cronômetro
   const handleStartTimer = async (activityId) => {
     try {
       if (activeTimerEntry?.id) {
@@ -117,7 +117,7 @@ export function DetalheCliente({
       if (error) throw error;
       await loadClientActivities();
     } catch (err) {
-      alert('Erro ao iniciar o cronómetro: ' + err.message);
+      alert('Erro ao iniciar o cronômetro: ' + err.message);
     }
   };
 
@@ -150,7 +150,7 @@ export function DetalheCliente({
       if (error) throw error;
       await loadClientActivities();
     } catch (err) {
-      alert('Erro ao pausar o cronómetro: ' + err.message);
+      alert('Erro ao pausar o cronômetro: ' + err.message);
     }
   };
 
@@ -221,7 +221,7 @@ export function DetalheCliente({
         </div>
       </div>
 
-      {/* Faixa do Cronómetro Ativo */}
+      {/* Faixa do Cronômetro Ativo */}
       {activeTimerEntry && (
         <ActiveTimerBanner
           activeEntry={activeTimerEntry}
@@ -263,7 +263,7 @@ export function DetalheCliente({
                 <th>ATIVIDADE / DESCRIÇÃO</th>
                 <th>HORAS ENCERRADAS</th>
                 <th>SITUAÇÃO</th>
-                <th>CRONÓMETRO</th>
+                <th>CRONÔMETRO</th>
                 <th style={{ textAlign: 'right' }}>AÇÕES</th>
               </tr>
             </thead>

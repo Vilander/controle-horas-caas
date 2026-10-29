@@ -237,3 +237,104 @@
   color: var(--color-text-muted);
   font-size: 13px;
 }
+
+/* Grid com 2 cartões de topo */
+.clientes-metrics-grid.two-cards {
+  grid-template-columns: 1fr 1fr;
+}
+
+/* Faixa de Notificações de Contrato */
+.contract-alerts-box {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-bottom: 20px;
+}
+
+.contract-alert-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px 16px;
+  border-radius: 6px;
+  font-size: 13px;
+}
+
+.alert-urgent {
+  background-color: #FDF2F2;
+  border: 1px solid #F8B4B4;
+  color: #7A1D1D;
+}
+
+.alert-warning {
+  background-color: #FFFBEB;
+  border: 1px solid #FDE68A;
+  color: #92400E;
+}
+
+.alert-info {
+  background-color: #EFF6FF;
+  border: 1px solid #BFDBFE;
+  color: #1E40AF;
+}
+
+.alert-expired {
+  background-color: #F3F4F6;
+  border: 1px solid #D1D5DB;
+  color: #374151;
+}
+
+.btn-alert-action {
+  background-color: #FFFFFF;
+  border: 1px solid currentColor;
+  color: inherit;
+  font-weight: 600;
+  font-size: 12px;
+  padding: 4px 10px;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+/* Tags de Status e Ações da Linha */
+.tag-active {
+  color: #059669;
+}
+
+.tag-inactive {
+  color: #6B7280;
+}
+
+.client-table-actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
+.btn-action-pill {
+  background: transparent;
+  border: 1px solid var(--color-border);
+  font-size: 11px;
+  font-weight: 600;
+  padding: 4px 8px;
+  border-radius: 4px;
+  cursor: pointer;
+  color: var(--color-text-muted);
+}
+
+.btn-action-pill:hover {
+  border-color: var(--color-base);
+  color: var(--color-base);
+}
+
+.form-field-checkbox {
+  margin-top: 8px;
+}
+
+.form-field-checkbox label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  cursor: pointer;
+}

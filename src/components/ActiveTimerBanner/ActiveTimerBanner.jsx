@@ -16,7 +16,7 @@ export function ActiveTimerBanner({ activeEntry, onPause }) {
             {activeEntry.activities?.name || 'Atividade em andamento'}
           </h4>
           <p className="banner-desc">
-            Cronómetro ativo. Prima pausar para encerrar o apontamento.
+            Cronômetro ativo. Prima pausar para encerrar o apontamento.
           </p>
         </div>
       </div>
