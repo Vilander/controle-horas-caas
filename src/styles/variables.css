@@ -1,0 +1,15 @@
+:root {
+  /* Cores Principais */
+  --color-base: #0D0D11;        /* Textos e contrastes principais */
+  --color-primary: #000080;     /* Azul institucional / botões principais */
+  --color-accent: #71226B;      /* Magenta/Roxo para timer ativo e alertas */
+  
+  /* Fundos e Estrutura */
+  --color-surface: #F7F7F9;     /* Background suave da aplicação */
+  --color-card-bg: #FFFFFF;     /* Fundo de cards, modais e tabelas */
+  --color-border: #E5E7EB;      /* Linhas divisórias e bordas sutis */
+  
+  /* Estados e Auxiliares */
+  --color-text-muted: #6B7280;  /* Subtítulos e legendas */
+  --color-danger: #D32F2F;      /* Ações destrutivas */
+}
