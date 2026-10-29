@@ -19,12 +19,14 @@ export function Clientes({
 
   const [metrics, setMetrics] = useState({
     activeCount: 0,
+    totalAllTimeSeconds: 0,
     activeTimer: null,
   });
 
   async function loadDashboardData() {
     setLoading(true);
     try {
+      // 1. Obter todos os clientes
       const { data: clientsData, error: clientsError } = await supabase
         .from('clients')
         .select('*')
@@ -32,36 +34,55 @@ export function Clientes({
 
       if (clientsError) throw clientsError;
 
-      // Busca cronômetro ativo global
+      // 2. Obter apontamentos para calcular o total geral da história
       const { data: entriesData, error: entriesError } = await supabase
         .from('time_entries')
         .select(`
           id,
           started_at,
           ended_at,
+          duration_seconds,
+          activity_id,
           activities (
+            client_id,
             clients (
               name
             )
           )
-        `)
-        .is('ended_at', null)
-        .limit(1)
-        .maybeSingle();
+        `);
 
       if (entriesError) throw entriesError;
 
+      const totalDurationByClient = {};
+      let totalAllTimeSeconds = 0;
       let runningTimer = null;
-      if (entriesData) {
-        runningTimer = {
-          clientName: entriesData.activities?.clients?.name || 'Cliente',
-          startedAt: entriesData.started_at,
-        };
-      }
 
-      setClients(clientsData || []);
+      (entriesData || []).forEach((entry) => {
+        const clientId = entry.activities?.client_id;
+
+        if (entry.ended_at) {
+          const secs = entry.duration_seconds || 0;
+          if (clientId) {
+            totalDurationByClient[clientId] = (totalDurationByClient[clientId] || 0) + secs;
+          }
+          totalAllTimeSeconds += secs;
+        } else if (!runningTimer) {
+          runningTimer = {
+            clientName: entry.activities?.clients?.name || 'Cliente',
+            startedAt: entry.started_at,
+          };
+        }
+      });
+
+      const decoratedClients = (clientsData || []).map((c) => ({
+        ...c,
+        totalSecondsGeneral: totalDurationByClient[c.id] || 0,
+      }));
+
+      setClients(decoratedClients);
       setMetrics({
-        activeCount: (clientsData || []).filter((c) => c.is_active).length,
+        activeCount: decoratedClients.filter((c) => c.is_active).length,
+        totalAllTimeSeconds,
         activeTimer: runningTimer,
       });
     } catch (err) {
@@ -87,13 +108,13 @@ export function Clientes({
       if (error) throw error;
       loadDashboardData();
     } catch (err) {
-      alert('Erro ao alterar status do cliente: ' + err.message);
+      alert('Erro ao alterar situação do cliente: ' + err.message);
     }
   };
 
   const handleDeleteClient = async (e, client) => {
     e.stopPropagation();
-    if (!confirm(`Deseja realmente excluir ${client.name}? Todas as atividades e apontamentos serão removidos.`)) return;
+    if (!confirm(`Deseja realmente excluir ${client.name}? Todas as atividades e apontamentos associados serão eliminados.`)) return;
 
     try {
       const { error } = await supabase
@@ -108,7 +129,14 @@ export function Clientes({
     }
   };
 
-  // Identifica clientes com avisos contratuais pendentes
+  function formatHoursMinutes(totalSeconds) {
+    if (!totalSeconds) return '0h 00min';
+    const hours = Math.floor(totalSeconds / 3600);
+    const minutes = Math.floor((totalSeconds % 3600) / 60);
+    return `${hours}h ${minutes.toString().padStart(2, '0')}min`;
+  }
+
+  // Notificações contratuais (30, 15, 7, 1 dia)
   const contractAlerts = clients
     .map((c) => ({ client: c, alert: getContractStatusAlert(c.contract_end_date) }))
     .filter((item) => item.alert !== null);
@@ -125,20 +153,19 @@ export function Clientes({
 
   return (
     <div className="clientes-page">
-      {/* Topo / Cabeçalho */}
       <header className="clientes-header">
         <div>
           <span className="clientes-breadcrumb">Gestão de horas / Clientes</span>
           <h1 className="clientes-title">Clientes</h1>
           <p className="clientes-subtitle">
-            Cadastre seus clientes, controle vigências contratuais e acompanhe as operações.
+            Cadastre os seus clientes, acompanhe as vigências contratuais e monitorize as horas de operação.
           </p>
         </div>
         <div className="clientes-actions">
           {isAdmin && (
             <>
               <button className="btn-secondary" onClick={onOpenNewUserModal}>
-                + Novo usuário
+                + Novo utilizador
               </button>
               <button className="btn-primary" onClick={onOpenNewClientModal}>
                 + Cadastrar cliente
@@ -148,7 +175,7 @@ export function Clientes({
         </div>
       </header>
 
-      {/* Alertas de Vencimento de Contrato (30, 15, 7, 1 dia) */}
+      {/* Alertas de Vencimento de Contrato */}
       {contractAlerts.length > 0 && (
         <div className="contract-alerts-box">
           {contractAlerts.map(({ client, alert: itemAlert }) => (
@@ -168,7 +195,7 @@ export function Clientes({
         </div>
       )}
 
-      {/* Cards de Métricas (2 cards: Clientes ativos e Cronômetro em andamento) */}
+      {/* Cartões Consolidados (Total Geral) */}
       <div className="clientes-metrics-grid two-cards">
         <div className="metric-card">
           <span className="metric-label">Clientes ativos</span>
@@ -189,7 +216,7 @@ export function Clientes({
         </div>
       </div>
 
-      {/* Barra de Filtros e Busca */}
+      {/* Barra de Filtros */}
       <div className="clientes-filter-bar">
         <div className="clientes-search-box">
           <input
@@ -212,10 +239,10 @@ export function Clientes({
         </div>
       </div>
 
-      {/* Tabela de Clientes com Ações */}
+      {/* Tabela de Clientes */}
       <div className="clientes-table-card">
         {loading ? (
-          <div className="table-loading">Carregando dados da carteira...</div>
+          <div className="table-loading">A carregar dados da carteira...</div>
         ) : filteredClients.length === 0 ? (
           <div className="table-empty">Nenhum cliente encontrado com os filtros atuais.</div>
         ) : (
@@ -226,6 +253,7 @@ export function Clientes({
                 <th>VIGÊNCIA</th>
                 <th>SERVIÇO</th>
                 <th>CONTATO</th>
+                <th>HORAS TOTAIS</th>
                 <th>VALOR/HORA</th>
                 <th style={{ textAlign: 'right' }}>AÇÕES</th>
               </tr>
@@ -261,6 +289,9 @@ export function Clientes({
                     </td>
                     <td>{client.service}</td>
                     <td>{client.contact_name || '—'}</td>
+                    <td className="td-hours">
+                      {formatHoursMinutes(client.totalSecondsGeneral)}
+                    </td>
                     <td className="td-rate">
                       {new Intl.NumberFormat('pt-BR', {
                         style: 'currency',
@@ -310,7 +341,7 @@ export function Clientes({
         <footer className="table-footer-info">
           <span>{filteredClients.length} cliente(s) listado(s)</span>
           <span className="info-note">
-            Selecione uma linha para acessar a planilha de atividades e cronômetros do cliente.
+            Selecione uma linha para aceder à planilha de atividades e cronómetros do cliente.
           </span>
         </footer>
       </div>

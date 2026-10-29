@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect } from 'react';
 import { supabase } from '../../lib/supabaseClient';
 import { useAuth } from '../../context/AuthContext';
 import { ActiveTimerBanner } from '../../components/ActiveTimerBanner/ActiveTimerBanner';
@@ -19,16 +19,10 @@ export function DetalheCliente({
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
 
-  // Define o limite inferior para o mês corrente (UTC)
-  const firstDayOfMonthIso = useMemo(() => {
-    const now = new Date();
-    return new Date(Date.UTC(now.getFullYear(), now.getMonth(), 1)).toISOString();
-  }, []);
-
   async function loadClientActivities() {
     setLoading(true);
     try {
-      // 1. Obter actividades com os respectivos responsáveis
+      // 1. Obter atividades do cliente e os seus responsáveis
       const { data: actsData, error: actsError } = await supabase
         .from('activities')
         .select('*, activity_assignees(profiles(id, full_name))')
@@ -37,7 +31,7 @@ export function DetalheCliente({
 
       if (actsError) throw actsError;
 
-      // 2. Obter apontamentos do cliente
+      // 2. Obter apontamentos gerais da história do cliente
       const { data: entriesData, error: entriesError } = await supabase
         .from('time_entries')
         .select('*, activities!inner(client_id, name)')
@@ -52,19 +46,16 @@ export function DetalheCliente({
         if (!entry.ended_at) {
           runningEntry = entry;
         } else {
-          // Contabiliza apenas apontamentos do mês actual para o fecho mensal
-          if (entry.started_at >= firstDayOfMonthIso) {
-            const actId = entry.activity_id;
-            if (!metricsByActivity[actId]) {
-              metricsByActivity[actId] = { totalSeconds: 0, count: 0 };
-            }
-            metricsByActivity[actId].totalSeconds += entry.duration_seconds || 0;
-            metricsByActivity[actId].count += 1;
+          // Totaliza todas as horas finalizadas desde o início
+          const actId = entry.activity_id;
+          if (!metricsByActivity[actId]) {
+            metricsByActivity[actId] = { totalSeconds: 0, count: 0 };
           }
+          metricsByActivity[actId].totalSeconds += entry.duration_seconds || 0;
+          metricsByActivity[actId].count += 1;
         }
       });
 
-      // Mapear dados agregados
       const decorated = (actsData || []).map((act) => ({
         ...act,
         assignees: (act.activity_assignees || []).map((aa) => aa.profiles).filter(Boolean),
@@ -80,7 +71,7 @@ export function DetalheCliente({
         onActivitiesLoaded(decorated);
       }
     } catch (err) {
-      console.error('Erro ao carregar actividades do cliente:', err.message);
+      console.error('Erro ao carregar atividades do cliente:', err.message);
     } finally {
       setLoading(false);
     }
@@ -92,7 +83,6 @@ export function DetalheCliente({
     }
   }, [client?.id]);
 
-  // Controlo do Cronômetro
   const handleStartTimer = async (activityId) => {
     try {
       if (activeTimerEntry?.id) {
@@ -117,7 +107,7 @@ export function DetalheCliente({
       if (error) throw error;
       await loadClientActivities();
     } catch (err) {
-      alert('Erro ao iniciar o cronômetro: ' + err.message);
+      alert('Erro ao iniciar cronômetro: ' + err.message);
     }
   };
 
@@ -150,7 +140,7 @@ export function DetalheCliente({
       if (error) throw error;
       await loadClientActivities();
     } catch (err) {
-      alert('Erro ao pausar o cronômetro: ' + err.message);
+      alert('Erro ao pausar cronômetro: ' + err.message);
     }
   };
 
@@ -161,7 +151,7 @@ export function DetalheCliente({
     return `${hours}h ${minutes.toString().padStart(2, '0')}min`;
   }
 
-  // Cálculos consolidados para a barra superior
+  // Cálculos consolidados acumulados
   const totalClientSeconds = activities.reduce((acc, act) => acc + act.totalSeconds, 0);
   const totalClientDecimalHours = totalClientSeconds / 3600;
   const totalFinancialValue = totalClientDecimalHours * Number(client?.hourly_rate || 0);
@@ -190,16 +180,16 @@ export function DetalheCliente({
         </div>
       </header>
 
-      {/* Cartões com Métricas Oficiais */}
+      {/* Cartões com Totais Gerais Acumulados */}
       <div className="detalhe-metrics-grid">
         <div className="detalhe-metric-card">
-          <span className="metric-label">Horas encerradas no mês</span>
+          <span className="metric-label">Horas encerradas (total geral)</span>
           <div className="metric-value">{formatHoursMinutes(totalClientSeconds)}</div>
-          <span className="metric-footer">Apenas apontamentos concluídos</span>
+          <span className="metric-footer">Total acumulado desde o início do contrato</span>
         </div>
 
         <div className="detalhe-metric-card">
-          <span className="metric-label">Valor das horas encerradas</span>
+          <span className="metric-label">Valor total das horas encerradas</span>
           <div className="metric-value">
             {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(
               totalFinancialValue
@@ -221,7 +211,7 @@ export function DetalheCliente({
         </div>
       </div>
 
-      {/* Faixa do Cronômetro Ativo */}
+      {/* Faixa de Cronômetro Ativo */}
       {activeTimerEntry && (
         <ActiveTimerBanner
           activeEntry={activeTimerEntry}
@@ -229,7 +219,7 @@ export function DetalheCliente({
         />
       )}
 
-      {/* Barra de Ferramentas */}
+      {/* Barra de Ações Operacionais */}
       <div className="detalhe-toolbar">
         <div className="toolbar-search">
           <input
