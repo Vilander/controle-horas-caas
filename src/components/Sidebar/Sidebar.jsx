@@ -19,7 +19,7 @@ export function Sidebar({ currentView, setCurrentView }) {
   return (
     <aside className="sidebar-container">
       <div className="sidebar-header">
-        <span className="sidebar-brand-badge">ÁREA DE TRABALHO</span>
+        <span className="sidebar-brand-badge">SISTEMA DE CONTROLE DE HORAS (SCH)</span>
         <h2 className="sidebar-brand-name">AS&amp;V Growth Partner</h2>
       </div>
 
