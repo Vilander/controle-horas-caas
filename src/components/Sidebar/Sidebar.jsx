@@ -20,7 +20,7 @@ export function Sidebar({ currentView, setCurrentView }) {
     <aside className="sidebar-container">
       <div className="sidebar-header">
         <span className="sidebar-brand-badge">ÁREA DE TRABALHO</span>
-        <h2 className="sidebar-brand-name">hora.</h2>
+        <h2 className="sidebar-brand-name">AS&amp;V Growth Partner</h2>
       </div>
 
       <nav className="sidebar-nav">
