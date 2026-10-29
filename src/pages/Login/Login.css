@@ -1,0 +1,132 @@
+.login-container {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 100vh;
+  background-color: var(--color-surface, #F7F7F9);
+  padding: 24px;
+}
+
+.login-card {
+  width: 100%;
+  max-width: 420px;
+  background: var(--color-card-bg, #FFFFFF);
+  border: 1px solid var(--color-border, #E5E7EB);
+  border-radius: 12px;
+  padding: 40px 32px;
+  box-shadow: 0 4px 16px rgba(13, 13, 17, 0.04);
+}
+
+.login-header {
+  text-align: center;
+  margin-bottom: 28px;
+}
+
+.login-badge {
+  display: inline-block;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  color: var(--color-primary, #000080);
+  background-color: rgba(0, 0, 128, 0.08);
+  padding: 4px 10px;
+  border-radius: 4px;
+  margin-bottom: 12px;
+}
+
+.login-title {
+  font-size: 24px;
+  font-weight: 700;
+  color: var(--color-base, #0D0D11);
+  margin: 0 0 8px 0;
+}
+
+.login-subtitle {
+  font-size: 14px;
+  color: var(--color-text-muted, #6B7280);
+  margin: 0;
+  line-height: 1.5;
+}
+
+.login-alert-error {
+  background-color: #FDF2F2;
+  border: 1px solid #F8B4B4;
+  color: var(--color-danger, #D32F2F);
+  font-size: 13px;
+  padding: 10px 14px;
+  border-radius: 6px;
+  margin-bottom: 20px;
+}
+
+.login-form {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+.login-field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  text-align: left;
+}
+
+.login-field label {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--color-base, #0D0D11);
+}
+
+.login-field input {
+  height: 42px;
+  padding: 0 12px;
+  border: 1px solid var(--color-border, #E5E7EB);
+  border-radius: 6px;
+  font-size: 14px;
+  color: var(--color-base, #0D0D11);
+  background-color: #FFFFFF;
+  outline: none;
+  transition: border-color 0.2s ease;
+}
+
+.login-field input:focus {
+  border-color: var(--color-primary, #000080);
+}
+
+.login-field input:disabled {
+  background-color: #F3F4F6;
+  cursor: not-allowed;
+}
+
+.login-btn-submit {
+  height: 44px;
+  background-color: var(--color-primary, #000080);
+  color: #FFFFFF;
+  border: none;
+  border-radius: 6px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: opacity 0.2s ease;
+  margin-top: 8px;
+}
+
+.login-btn-submit:hover:not(:disabled) {
+  opacity: 0.92;
+}
+
+.login-btn-submit:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.login-footer {
+  margin-top: 28px;
+  text-align: center;
+}
+
+.login-footer p {
+  font-size: 12px;
+  color: var(--color-text-muted, #6B7280);
+  margin: 0;
+}
