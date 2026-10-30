@@ -7,46 +7,69 @@ export function Sidebar({ currentView, setCurrentView }) {
 
   const displayName = profile?.full_name || user?.email?.split('@')[0] || 'Usuário';
   const roleLabel = profile?.role === 'admin' ? 'Administrador(a)' : 'Consultor(a)';
-  
-  // Iniciais para o avatar
+
+  // Extrai as duas primeiras iniciais para exibição no avatar do rodapé
   const initials = displayName
     .split(' ')
     .filter(Boolean)
     .slice(0, 2)
-    .map((n) => n[0].toUpperCase())
+    .map((namePart) => namePart[0].toUpperCase())
     .join('');
 
   return (
     <aside className="sidebar-container">
-      <div className="sidebar-header">
-        <span className="sidebar-brand-badge">SISTEMA DE CONTROLE DE HORAS (SCH)</span>
-        <h2 className="sidebar-brand-name">AS&amp;V Growth Partner</h2>
+      <div className="sidebar-top-section">
+        {/* Cabeçalho da Marca / Logotipo */}
+        <div className="sidebar-brand-wrapper">
+          <span className="sidebar-brand-badge">SISTEMA DE CONTROLE DE HORAS (SCH)</span>
+          <div className="sidebar-logo-container">
+            <img
+              src="/Logo-Original.webp"
+              alt="AS&V Growth Partner"
+              className="sidebar-logo-img"
+            />
+          </div>
+        </div>
+
+        {/* Navegação Principal */}
+        <div className="sidebar-nav-section">
+          <span className="sidebar-section-title">ÁREA DE TRABALHO</span>
+          <nav className="sidebar-nav">
+            <button
+              type="button"
+              className={`sidebar-nav-item ${currentView === 'clientes' ? 'active' : ''}`}
+              onClick={() => setCurrentView('clientes')}
+            >
+              Clientes
+            </button>
+            <button
+              type="button"
+              className={`sidebar-nav-item ${currentView === 'relatorios' ? 'active' : ''}`}
+              onClick={() => setCurrentView('relatorios')}
+            >
+              Relatórios
+            </button>
+          </nav>
+        </div>
       </div>
 
-      <nav className="sidebar-nav">
-        <button
-          className={`sidebar-nav-item ${currentView === 'clientes' ? 'active' : ''}`}
-          onClick={() => setCurrentView('clientes')}
-        >
-          Clientes
-        </button>
-        <button
-          className={`sidebar-nav-item ${currentView === 'relatorios' ? 'active' : ''}`}
-          onClick={() => setCurrentView('relatorios')}
-        >
-          Relatórios
-        </button>
-      </nav>
-
+      {/* Rodapé: Informações da Conta e Ação de Logout */}
       <div className="sidebar-footer">
         <div className="sidebar-user-info">
           <div className="sidebar-avatar">{initials || 'US'}</div>
           <div className="sidebar-user-details">
-            <span className="sidebar-user-name">{displayName}</span>
+            <span className="sidebar-user-name" title={displayName}>
+              {displayName}
+            </span>
             <span className="sidebar-user-role">{roleLabel}</span>
           </div>
         </div>
-        <button className="sidebar-btn-logout" onClick={signOut}>
+
+        <button
+          type="button"
+          className="sidebar-btn-logout"
+          onClick={signOut}
+        >
           Sair
         </button>
       </div>
