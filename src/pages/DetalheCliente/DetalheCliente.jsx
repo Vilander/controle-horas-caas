@@ -11,9 +11,10 @@ export function DetalheCliente({
   onOpenManualEntry, 
   onActivitiesLoaded,
   onEditActivity,
-  onDeleteActivity
+  onDeleteActivity,
+  onOpenEditClientModal
 }) {
-  const { user } = useAuth();
+  const { user, isAdmin } = useAuth();
   const [activities, setActivities] = useState([]);
   const [activeTimerEntry, setActiveTimerEntry] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -22,7 +23,7 @@ export function DetalheCliente({
   async function loadClientActivities() {
     setLoading(true);
     try {
-      // 1. Obter atividades do cliente e os seus responsáveis
+      // 1. Carrega as atividades do cliente
       const { data: actsData, error: actsError } = await supabase
         .from('activities')
         .select('*, activity_assignees(profiles(id, full_name))')
@@ -31,7 +32,7 @@ export function DetalheCliente({
 
       if (actsError) throw actsError;
 
-      // 2. Obter apontamentos gerais da história do cliente
+      // 2. Carrega todos os apontamentos vinculados a este cliente
       const { data: entriesData, error: entriesError } = await supabase
         .from('time_entries')
         .select('*, activities!inner(client_id, name)')
@@ -46,7 +47,6 @@ export function DetalheCliente({
         if (!entry.ended_at) {
           runningEntry = entry;
         } else {
-          // Totaliza todas as horas finalizadas desde o início
           const actId = entry.activity_id;
           if (!metricsByActivity[actId]) {
             metricsByActivity[actId] = { totalSeconds: 0, count: 0 };
@@ -151,7 +151,6 @@ export function DetalheCliente({
     return `${hours}h ${minutes.toString().padStart(2, '0')}min`;
   }
 
-  // Cálculos consolidados acumulados
   const totalClientSeconds = activities.reduce((acc, act) => acc + act.totalSeconds, 0);
   const totalClientDecimalHours = totalClientSeconds / 3600;
   const totalFinancialValue = totalClientDecimalHours * Number(client?.hourly_rate || 0);
@@ -169,40 +168,60 @@ export function DetalheCliente({
           <button className="btn-breadcrumb-back" onClick={onBack}>
             ← Clientes
           </button>
-          <h1 className="detalhe-client-name">{client.name}</h1>
-          <p className="detalhe-client-meta">
-            {client.service} &bull; Contato: {client.contact_name || 'Não informado'} &bull;{' '}
-            {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(
-              client.hourly_rate
+          <div className="detalhe-title-row">
+            <h1 className="detalhe-client-name">{client.name}</h1>
+            {/* Botão de editar cliente exibido apenas para Administradores */}
+            {isAdmin && onOpenEditClientModal && (
+              <button 
+                type="button" 
+                className="btn-edit-client-header"
+                onClick={() => onOpenEditClientModal(client)}
+              >
+                ✏️ Editar cliente
+              </button>
             )}
-            /h
+          </div>
+          <p className="detalhe-client-meta">
+            {client.service} &bull; Contato: {client.contact_name || 'Não informado'}
+            {/* Valor/hora ocultado para consultores */}
+            {isAdmin && (
+              <>
+                {' '}&bull;{' '}
+                {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(
+                  client.hourly_rate
+                )}
+                /h
+              </>
+            )}
           </p>
         </div>
       </header>
 
-      {/* Cartões com Totais Gerais Acumulados */}
-      <div className="detalhe-metrics-grid">
+      {/* Cards de Métricas: 3 cards para Admin (com Financeiro) e 2 para Consultor */}
+      <div className={`detalhe-metrics-grid ${isAdmin ? 'three-cards' : 'two-cards'}`}>
         <div className="detalhe-metric-card">
           <span className="metric-label">Horas encerradas (total geral)</span>
           <div className="metric-value">{formatHoursMinutes(totalClientSeconds)}</div>
           <span className="metric-footer">Total acumulado desde o início do contrato</span>
         </div>
 
-        <div className="detalhe-metric-card">
-          <span className="metric-label">Valor total das horas encerradas</span>
-          <div className="metric-value">
-            {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(
-              totalFinancialValue
-            )}
+        {isAdmin && (
+          <div className="detalhe-metric-card">
+            <span className="metric-label">Valor total das horas encerradas</span>
+            <div className="metric-value" style={{ color: 'var(--color-primary, #000080)' }}>
+              {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(
+                totalFinancialValue
+              )}
+            </div>
+            <span className="metric-footer">
+              {totalClientDecimalHours.toFixed(2)}h &times; R$ {Number(client?.hourly_rate || 0).toFixed(2)}/h
+            </span>
           </div>
-          <span className="metric-footer">
-            {totalClientDecimalHours.toFixed(2)}h &times; R$ {Number(client?.hourly_rate || 0).toFixed(2)}/h
-          </span>
-        </div>
+        )}
 
         <div className="detalhe-metric-card">
           <span className="metric-label">Em andamento - hoje</span>
-          <div className="metric-value" style={{ color: 'var(--color-accent)' }}>
+          <div className="metric-value" style={{ color: 'var(--color-accent, #71226B)' }}>
             {activeTimerEntry ? 'Ativo' : '00:00:00'}
           </div>
           <span className="metric-footer">
@@ -211,7 +230,7 @@ export function DetalheCliente({
         </div>
       </div>
 
-      {/* Faixa de Cronômetro Ativo */}
+      {/* Faixa de Destaque com Cronômetro em Execução */}
       {activeTimerEntry && (
         <ActiveTimerBanner
           activeEntry={activeTimerEntry}
@@ -240,12 +259,12 @@ export function DetalheCliente({
         </div>
       </div>
 
-      {/* Tabela de Atividades */}
+      {/* Tabela de Atividades do Cliente */}
       <div className="detalhe-table-card">
         {loading ? (
-          <div className="table-status">A carregar atividades...</div>
+          <div className="table-status">Carregando atividades...</div>
         ) : filteredActivities.length === 0 ? (
-          <div className="table-status">Nenhuma atividade registada para este cliente.</div>
+          <div className="table-status">Nenhuma atividade cadastrada para este cliente.</div>
         ) : (
           <table className="detalhe-table">
             <thead>

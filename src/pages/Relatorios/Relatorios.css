@@ -1,14 +1,18 @@
+/* Layout e Contêiner Principal */
 .relatorios-page {
   padding: 32px 40px;
   flex: 1;
   max-width: 1200px;
+  box-sizing: border-box;
 }
 
+/* Cabeçalho da Página */
 .relatorios-header {
   display: flex;
   justify-content: space-between;
   align-items: flex-start;
   margin-bottom: 24px;
+  gap: 16px;
 }
 
 .relatorios-breadcrumb {
@@ -22,17 +26,27 @@
   font-size: 28px;
   font-weight: 700;
   color: var(--color-base, #0D0D11);
-  margin-bottom: 4px;
+  margin: 0 0 4px 0;
 }
 
 .relatorios-subtitle {
   font-size: 14px;
   color: var(--color-text-muted, #6B7280);
+  margin: 0;
 }
 
+/* Grupo de Ações do Cabeçalho */
 .relatorios-actions {
   display: flex;
+  align-items: center;
   gap: 10px;
+  flex-shrink: 0;
+}
+
+.pdf-actions-group {
+  display: flex;
+  align-items: center;
+  gap: 8px;
 }
 
 /* Card de Filtros */
@@ -45,6 +59,7 @@
   align-items: flex-end;
   gap: 16px;
   margin-bottom: 24px;
+  box-shadow: 0 1px 3px rgba(13, 13, 17, 0.04);
 }
 
 .filter-group {
@@ -70,16 +85,24 @@
   background-color: #FFFFFF;
   color: var(--color-base, #0D0D11);
   outline: none;
+  font-family: inherit;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
 }
 
-/* Botão com Spinner e Feedback */
+.filter-group input:focus,
+.filter-group select:focus {
+  border-color: var(--color-primary, #000080);
+  box-shadow: 0 0 0 2px rgba(0, 0, 128, 0.1);
+}
+
+/* Botão Gerar Relatório com Spinner */
 .btn-generate {
   height: 38px;
   display: inline-flex;
   align-items: center;
   justify-content: center;
   gap: 8px;
-  padding: 0 18px;
+  padding: 0 20px;
   background-color: var(--color-primary, #000080);
   color: #FFFFFF;
   border: none;
@@ -88,7 +111,7 @@
   font-weight: 600;
   cursor: pointer;
   white-space: nowrap;
-  transition: opacity 0.2s ease, background-color 0.2s ease;
+  transition: background-color 0.2s ease, opacity 0.2s ease;
 }
 
 .btn-generate:hover:not(:disabled) {
@@ -119,20 +142,57 @@
   }
 }
 
-/* Grid de Métricas */
+/* Grid de Métricas Consolidadas */
 .relatorios-metrics-grid {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
   gap: 16px;
   margin-bottom: 24px;
 }
 
-/* Tabela Consolidada */
+.metric-card {
+  background-color: var(--color-card-bg, #FFFFFF);
+  border: 1px solid var(--color-border, #E5E7EB);
+  border-radius: 8px;
+  padding: 20px 24px;
+  display: flex;
+  flex-direction: column;
+  box-shadow: 0 1px 3px rgba(13, 13, 17, 0.04);
+}
+
+.metric-label {
+  font-size: 13px;
+  color: var(--color-text-muted, #6B7280);
+  font-weight: 500;
+  margin-bottom: 8px;
+}
+
+.metric-value {
+  font-size: 32px;
+  font-weight: 700;
+  color: var(--color-base, #0D0D11);
+  letter-spacing: -0.02em;
+  line-height: 1.1;
+  margin-bottom: 6px;
+}
+
+.metric-footer {
+  font-size: 12px;
+  color: var(--color-text-subtle, #9CA3AF);
+}
+
+/* Controle de Visibilidade Financeira em Tela */
+.financial-element.screen-hidden {
+  display: none !important;
+}
+
+/* Card da Tabela de Fechamento */
 .relatorios-table-card {
   background-color: var(--color-card-bg, #FFFFFF);
   border: 1px solid var(--color-border, #E5E7EB);
   border-radius: 8px;
   overflow: hidden;
+  box-shadow: 0 1px 3px rgba(13, 13, 17, 0.04);
 }
 
 .report-table-header {
@@ -145,17 +205,26 @@
 }
 
 .report-table-header h3 {
-  font-size: 15px;
+  font-size: 16px;
   font-weight: 700;
   color: var(--color-base, #0D0D11);
   margin: 0;
 }
 
-.report-table-header span {
+.client-service-desc {
   font-size: 12px;
+  color: var(--color-text-muted, #6B7280);
+  display: block;
+  margin-top: 2px;
+}
+
+.report-table-dates {
+  font-size: 12px;
+  font-weight: 500;
   color: var(--color-text-muted, #6B7280);
 }
 
+/* Estrutura da Tabela */
 .relatorios-table {
   width: 100%;
   border-collapse: collapse;
@@ -191,7 +260,7 @@
 .row-title-area {
   display: flex;
   align-items: flex-start;
-  gap: 8px;
+  gap: 10px;
 }
 
 .expand-indicator {
@@ -212,7 +281,7 @@
   margin-top: 2px;
 }
 
-/* Área de Registros em Linhas Verticais */
+/* Detalhamento de Apontamentos em Linhas Verticais */
 .tr-details-subrow.hidden-screen {
   display: none;
 }
@@ -222,7 +291,7 @@
 }
 
 .td-details-container {
-  padding: 10px 18px 14px 36px !important;
+  padding: 12px 20px 16px 36px !important;
   background-color: #FAF5F9;
   border-bottom: 1px solid var(--color-border, #E5E7EB);
 }
@@ -268,7 +337,7 @@
   display: flex;
   align-items: center;
   gap: 8px;
-  min-width: 200px;
+  min-width: 210px;
 }
 
 .badge-date {
@@ -308,6 +377,7 @@
   color: var(--color-primary, #000080);
 }
 
+/* Rodapé da Tabela */
 .relatorios-table tfoot td {
   background-color: #FAFAFB;
   font-weight: 700;
@@ -324,12 +394,20 @@
   border-top: 1px solid var(--color-border, #E5E7EB);
 }
 
-/* Regras de Impressão e PDF */
+/* Oculto em tela normal (reservado para impressão/PDF) */
+.print-only {
+  display: none;
+}
+
+/* ==========================================================================
+   REGRAS DE IMPRESSÃO / EXPORTAÇÃO EM PDF (@media print)
+   ========================================================================== */
 @media print {
   body {
     background-color: #FFFFFF !important;
   }
 
+  /* Oculta navegação, botões e formulários da tela */
   .sidebar-container,
   .no-print {
     display: none !important;
@@ -346,6 +424,55 @@
     box-shadow: none !important;
   }
 
+  /* Cabeçalho Executivo Oficial com Logotipo AS&V */
+  .print-only {
+    display: flex !important;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 2px solid var(--color-primary, #000080);
+    padding-bottom: 14px;
+    margin-bottom: 20px;
+  }
+
+  .report-pdf-brand {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+  }
+
+  .report-pdf-logo {
+    max-width: 140px;
+    height: auto;
+    object-fit: contain;
+  }
+
+  .report-pdf-sysname {
+    font-size: 11px;
+    font-weight: 700;
+    color: var(--color-text-muted, #6B7280);
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+  }
+
+  .report-pdf-meta {
+    text-align: right;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+  }
+
+  .report-pdf-tag {
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--color-primary, #000080);
+  }
+
+  .report-pdf-period {
+    font-size: 11px;
+    color: var(--color-text-muted, #6B7280);
+  }
+
+  /* Força a abertura de todos os registros detalhados no papel */
   .tr-details-subrow.hidden-screen,
   .tr-details-subrow.visible-screen {
     display: table-row !important;
@@ -371,5 +498,44 @@
   .badge-origin {
     background-color: transparent !important;
     border: 1px solid #E5E7EB;
+  }
+
+  /* ------------------------------------------------------------------------
+     Controle Dinâmico de Modos de PDF (Simplificado vs. Completo)
+     ------------------------------------------------------------------------ */
+
+  /* 1. Modo PDF Simplificado: Oculta colunas financeiras, badge executivo e origem do lançamento */
+  .print-mode-simplified .financial-element {
+    display: none !important;
+  }
+
+  .print-mode-simplified .pdf-tag-full {
+    display: none !important;
+  }
+
+  .print-mode-simplified .pdf-tag-simplified {
+    display: inline !important;
+  }
+
+  /* Oculta o indicador (Cronômetro / Manual) no PDF Simplificado */
+  .print-mode-simplified .badge-origin {
+    display: none !important;
+  }
+
+  /* 2. Modo PDF Completo: Exibe colunas financeiras, badge executivo e mantém a origem */
+  .print-mode-full .financial-element {
+    display: table-cell !important;
+  }
+
+  .print-mode-full div.financial-element {
+    display: flex !important;
+  }
+
+  .print-mode-full .pdf-tag-simplified {
+    display: none !important;
+  }
+
+  .print-mode-full .pdf-tag-full {
+    display: inline !important;
   }
 }

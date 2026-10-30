@@ -26,7 +26,7 @@ export function Clientes({
   async function loadDashboardData() {
     setLoading(true);
     try {
-      // 1. Obter todos os clientes
+      // 1. Busca carteira de clientes
       const { data: clientsData, error: clientsError } = await supabase
         .from('clients')
         .select('*')
@@ -34,7 +34,7 @@ export function Clientes({
 
       if (clientsError) throw clientsError;
 
-      // 2. Obter apontamentos para calcular o total geral da história
+      // 2. Busca apontamentos de tempo para acumular histórico geral
       const { data: entriesData, error: entriesError } = await supabase
         .from('time_entries')
         .select(`
@@ -98,6 +98,8 @@ export function Clientes({
 
   const handleToggleActive = async (e, client) => {
     e.stopPropagation();
+    if (!isAdmin) return;
+
     const newStatus = !client.is_active;
     try {
       const { error } = await supabase
@@ -114,7 +116,11 @@ export function Clientes({
 
   const handleDeleteClient = async (e, client) => {
     e.stopPropagation();
-    if (!confirm(`Deseja realmente excluir ${client.name}? Todas as atividades e apontamentos associados serão eliminados.`)) return;
+    if (!isAdmin) return;
+
+    if (!confirm(`Deseja realmente excluir ${client.name}? Todas as atividades e registros de tempo vinculados serão removidos permanentemente.`)) {
+      return;
+    }
 
     try {
       const { error } = await supabase
@@ -136,7 +142,7 @@ export function Clientes({
     return `${hours}h ${minutes.toString().padStart(2, '0')}min`;
   }
 
-  // Notificações contratuais (30, 15, 7, 1 dia)
+  // Notificações de vigência (30, 15, 7, 1 dia)
   const contractAlerts = clients
     .map((c) => ({ client: c, alert: getContractStatusAlert(c.contract_end_date) }))
     .filter((item) => item.alert !== null);
@@ -158,25 +164,25 @@ export function Clientes({
           <span className="clientes-breadcrumb">Gestão de horas / Clientes</span>
           <h1 className="clientes-title">Clientes</h1>
           <p className="clientes-subtitle">
-            Cadastre os seus clientes, acompanhe as vigências contratuais e monitorize as horas de operação.
+            Cadastre seus clientes, acompanhe as vigências contratuais e monitore as horas dedicadas a cada operação.
           </p>
         </div>
-        <div className="clientes-actions">
-          {isAdmin && (
-            <>
-              <button className="btn-secondary" onClick={onOpenNewUserModal}>
-                + Novo utilizador
-              </button>
-              <button className="btn-primary" onClick={onOpenNewClientModal}>
-                + Cadastrar cliente
-              </button>
-            </>
-          )}
-        </div>
+        
+        {/* Ações de criação exclusivas para Administradores */}
+        {isAdmin && (
+          <div className="clientes-actions">
+            <button className="btn-secondary" onClick={onOpenNewUserModal}>
+              + Novo usuário
+            </button>
+            <button className="btn-primary" onClick={onOpenNewClientModal}>
+              + Cadastrar cliente
+            </button>
+          </div>
+        )}
       </header>
 
-      {/* Alertas de Vencimento de Contrato */}
-      {contractAlerts.length > 0 && (
+      {/* Alertas de Vencimento de Contrato (Apenas visíveis com ação se for Admin) */}
+      {isAdmin && contractAlerts.length > 0 && (
         <div className="contract-alerts-box">
           {contractAlerts.map(({ client, alert: itemAlert }) => (
             <div key={client.id} className={`contract-alert-item alert-${itemAlert.severity}`}>
@@ -195,7 +201,7 @@ export function Clientes({
         </div>
       )}
 
-      {/* Cartões Consolidados (Total Geral) */}
+      {/* Cartões de Indicadores Gerais */}
       <div className="clientes-metrics-grid two-cards">
         <div className="metric-card">
           <span className="metric-label">Clientes ativos</span>
@@ -216,7 +222,7 @@ export function Clientes({
         </div>
       </div>
 
-      {/* Barra de Filtros */}
+      {/* Filtros e Busca */}
       <div className="clientes-filter-bar">
         <div className="clientes-search-box">
           <input
@@ -242,7 +248,7 @@ export function Clientes({
       {/* Tabela de Clientes */}
       <div className="clientes-table-card">
         {loading ? (
-          <div className="table-loading">A carregar dados da carteira...</div>
+          <div className="table-loading">Carregando dados da carteira...</div>
         ) : filteredClients.length === 0 ? (
           <div className="table-empty">Nenhum cliente encontrado com os filtros atuais.</div>
         ) : (
@@ -254,8 +260,8 @@ export function Clientes({
                 <th>SERVIÇO</th>
                 <th>CONTATO</th>
                 <th>HORAS TOTAIS</th>
-                <th>VALOR/HORA</th>
-                <th style={{ textAlign: 'right' }}>AÇÕES</th>
+                {isAdmin && <th>VALOR/HORA</th>}
+                <th style={{ textAlign: 'right' }}>ACESSO</th>
               </tr>
             </thead>
             <tbody>
@@ -292,24 +298,30 @@ export function Clientes({
                     <td className="td-hours">
                       {formatHoursMinutes(client.totalSecondsGeneral)}
                     </td>
-                    <td className="td-rate">
-                      {new Intl.NumberFormat('pt-BR', {
-                        style: 'currency',
-                        currency: 'BRL',
-                      }).format(client.hourly_rate)}
-                    </td>
+                    
+                    {/* Tarifa/hora visível apenas para Administradores */}
+                    {isAdmin && (
+                      <td className="td-rate">
+                        {new Intl.NumberFormat('pt-BR', {
+                          style: 'currency',
+                          currency: 'BRL',
+                        }).format(client.hourly_rate)}
+                      </td>
+                    )}
+
                     <td className="td-action" onClick={(e) => e.stopPropagation()}>
                       <div className="client-table-actions">
-                        <button
-                          type="button"
-                          className="btn-action-pill"
-                          title={client.is_active ? 'Inativar cliente' : 'Ativar cliente'}
-                          onClick={(e) => handleToggleActive(e, client)}
-                        >
-                          {client.is_active ? 'Inativar' : 'Ativar'}
-                        </button>
+                        {/* Botões restritos para Administradores */}
                         {isAdmin && (
                           <>
+                            <button
+                              type="button"
+                              className="btn-action-pill"
+                              title={client.is_active ? 'Inativar cliente' : 'Ativar cliente'}
+                              onClick={(e) => handleToggleActive(e, client)}
+                            >
+                              {client.is_active ? 'Inativar' : 'Ativar'}
+                            </button>
                             <button
                               type="button"
                               className="btn-action-icon"
@@ -328,7 +340,13 @@ export function Clientes({
                             </button>
                           </>
                         )}
-                        <span className="arrow-access" onClick={() => onSelectClient(client)}>→</span>
+                        <span 
+                          className="arrow-access" 
+                          onClick={() => onSelectClient(client)}
+                          title="Abrir atividades do cliente"
+                        >
+                          →
+                        </span>
                       </div>
                     </td>
                   </tr>
@@ -341,7 +359,7 @@ export function Clientes({
         <footer className="table-footer-info">
           <span>{filteredClients.length} cliente(s) listado(s)</span>
           <span className="info-note">
-            Selecione uma linha para aceder à planilha de atividades e cronómetros do cliente.
+            Selecione uma linha para acessar a planilha de atividades e cronômetros do cliente.
           </span>
         </footer>
       </div>

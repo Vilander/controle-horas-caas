@@ -4,26 +4,36 @@ import { useAuth } from '../../context/AuthContext';
 import './Relatorios.css';
 
 export function Relatorios({ initialClientId = null }) {
-  const { profile, user } = useAuth();
+  const { profile, user, isAdmin } = useAuth();
   const [clients, setClients] = useState([]);
   const [selectedClientId, setSelectedClientId] = useState(initialClientId || '');
   
-  // Intervalo padrão: primeiro e último dia do mês corrente
+  // Período padrão: primeiro e último dia do mês corrente
   const now = new Date();
   const defaultStartDate = new Date(now.getFullYear(), now.getMonth(), 1).toISOString().split('T')[0];
   const defaultEndDate = new Date(now.getFullYear(), now.getMonth() + 1, 0).toISOString().split('T')[0];
 
   const [startDate, setStartDate] = useState(defaultStartDate);
   const [endDate, setEndDate] = useState(defaultEndDate);
+  
+  // Modo de exibição na tela: 'full' (financeiro) ou 'simplified' (operacional)
+  const [screenViewType, setScreenViewType] = useState('full');
+  
+  // Modo de impressão forçado durante window.print(): 'full' ou 'simplified'
+  const [printMode, setPrintMode] = useState('full');
+  
   const [reportData, setReportData] = useState(null);
   const [loading, setLoading] = useState(false);
   const [expandedActivities, setExpandedActivities] = useState({});
+
+  // Determina se a visualização em tela deve exibir informações financeiras
+  const isFinancialOnScreen = isAdmin && screenViewType === 'full';
 
   useEffect(() => {
     async function loadClients() {
       const { data, error } = await supabase
         .from('clients')
-        .select('id, name, hourly_rate, service')
+        .select('id, name, hourly_rate, service, contract_start_date, contract_end_date')
         .order('name');
       
       if (!error && data) {
@@ -46,7 +56,6 @@ export function Relatorios({ initialClientId = null }) {
       const startIso = new Date(`${startDate}T00:00:00`).toISOString();
       const endIso = new Date(`${endDate}T23:59:59`).toISOString();
 
-      // Temporizador visual para garantir percepção de recarregamento
       const delayPromise = new Promise((resolve) => setTimeout(resolve, 600));
 
       const queryPromise = supabase
@@ -160,10 +169,21 @@ export function Relatorios({ initialClientId = null }) {
     return `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`;
   };
 
+  // Dispara a impressão com o modo específico (Completo ou Simplificado)
+  const handlePrint = (mode) => {
+    const targetMode = isAdmin ? mode : 'simplified';
+    setPrintMode(targetMode);
+
+    // Aguarda o React atualizar a classe no DOM antes de abrir o diálogo do navegador
+    setTimeout(() => {
+      window.print();
+    }, 50);
+  };
+
   const handleExportCSV = () => {
     if (!reportData || reportData.rawEntries.length === 0) return;
 
-    const headers = [
+    let headers = [
       'Cliente',
       'Atividade',
       'Data',
@@ -171,23 +191,25 @@ export function Relatorios({ initialClientId = null }) {
       'Hora Fim',
       'Duracao Formatada',
       'Horas Decimais',
-      'Valor Hora (R$)',
-      'Subtotal Apontamento (R$)',
       'Origem',
-      'Responsavel'
+      'Responsavel',
     ];
+
+    if (isFinancialOnScreen) {
+      headers.splice(7, 0, 'Valor Hora (R$)', 'Subtotal (R$)');
+    }
 
     const hourlyRate = Number(reportData.client.hourly_rate || 0);
 
     const lines = reportData.rawEntries.map((entry) => {
-      const startDate = new Date(entry.started_at);
-      const dateStr = startDate.toLocaleDateString('pt-BR');
+      const startDateObj = new Date(entry.started_at);
+      const dateStr = startDateObj.toLocaleDateString('pt-BR');
       const startTime = formatTimeOnly(entry.started_at);
       const endTime = formatTimeOnly(entry.ended_at);
       const decHours = (entry.duration_seconds || 0) / 3600;
       const subtotalEntry = decHours * hourlyRate;
 
-      return [
+      const baseRow = [
         `"${reportData.client.name.replace(/"/g, '""')}"`,
         `"${entry.activities.name.replace(/"/g, '""')}"`,
         `"${dateStr}"`,
@@ -195,59 +217,100 @@ export function Relatorios({ initialClientId = null }) {
         `"${endTime}"`,
         `"${formatHoursMinutes(entry.duration_seconds)}"`,
         decHours.toFixed(2).replace('.', ','),
-        hourlyRate.toFixed(2).replace('.', ','),
-        subtotalEntry.toFixed(2).replace('.', ','),
+      ];
+
+      if (isFinancialOnScreen) {
+        baseRow.push(
+          hourlyRate.toFixed(2).replace('.', ','),
+          subtotalEntry.toFixed(2).replace('.', ',')
+        );
+      }
+
+      baseRow.push(
         `"${entry.origin === 'timer' ? 'Cronômetro' : 'Manual'}"`,
         `"${(entry.profiles?.full_name || '').replace(/"/g, '""')}"`
-      ];
+      );
+
+      return baseRow;
     });
 
-    lines.push([
-      '"TOTAL DO PERIODO"',
+    const totalRow = [
+      '"TOTAL DO PERÍODO"',
       `"${reportData.activitiesCount} atividades"`,
       '""',
       '""',
       '""',
       `"${formatHoursMinutes(reportData.totalSeconds)}"`,
       reportData.totalDecimalHours.toFixed(2).replace('.', ','),
-      hourlyRate.toFixed(2).replace('.', ','),
-      reportData.totalFinancial.toFixed(2).replace('.', ','),
-      '""',
-      '""'
-    ]);
+    ];
+
+    if (isFinancialOnScreen) {
+      totalRow.push(
+        hourlyRate.toFixed(2).replace('.', ','),
+        reportData.totalFinancial.toFixed(2).replace('.', ',')
+      );
+    }
+
+    totalRow.push('""', '""');
+    lines.push(totalRow);
 
     const csvContent = 'data:text/csv;charset=utf-8,\uFEFF' + [headers.join(';'), ...lines.map((l) => l.join(';'))].join('\n');
     const encodedUri = encodeURI(csvContent);
     const link = document.createElement('a');
     link.setAttribute('href', encodedUri);
-    link.setAttribute('download', `relatorio_detalhado_${reportData.client.name.toLowerCase().replace(/\s+/g, '_')}_${startDate}_a_${endDate}.csv`);
+    link.setAttribute('download', `relatorio_${isFinancialOnScreen ? 'financeiro' : 'operacional'}_${reportData.client.name.toLowerCase().replace(/\s+/g, '_')}_${startDate}_a_${endDate}.csv`);
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
   };
 
-  const handlePrintPDF = () => {
-    window.print();
-  };
-
   return (
-    <div className="relatorios-page">
+    <div className={`relatorios-page print-mode-${printMode}`}>
       <header className="relatorios-header">
         <div>
           <span className="relatorios-breadcrumb">Relatórios / Horas trabalhadas</span>
           <h1 className="relatorios-title">Relatório de horas</h1>
           <p className="relatorios-subtitle">
-            Consulte as horas encerradas, o detalhamento das sessões e o valor dos serviços por atividade.
+            Consulte as horas encerradas, o detalhamento das sessões e os totais operacionais.
           </p>
         </div>
+
         {reportData && (
           <div className="relatorios-actions no-print">
-            <button className="btn-secondary" onClick={handleExportCSV}>
+            <button type="button" className="btn-secondary" onClick={handleExportCSV}>
               Exportar planilha (CSV)
             </button>
-            <button className="btn-primary" onClick={handlePrintPDF}>
-              Exportar PDF
-            </button>
+
+            {/* Administrador tem as 2 opções de PDF disponíveis */}
+            {isAdmin ? (
+              <div className="pdf-actions-group">
+                <button
+                  type="button"
+                  className="btn-secondary"
+                  onClick={() => handlePrint('simplified')}
+                  title="Gera PDF sem dados financeiros, apenas com horas e atividades"
+                >
+                  PDF Simplificado
+                </button>
+                <button
+                  type="button"
+                  className="btn-primary"
+                  onClick={() => handlePrint('full')}
+                  title="Gera PDF executivo completo com horas e valores financeiros"
+                >
+                  PDF Completo
+                </button>
+              </div>
+            ) : (
+              /* Consultor tem apenas a emissão simplificada */
+              <button
+                type="button"
+                className="btn-primary"
+                onClick={() => handlePrint('simplified')}
+              >
+                Exportar PDF
+              </button>
+            )}
           </div>
         )}
       </header>
@@ -286,6 +349,19 @@ export function Relatorios({ initialClientId = null }) {
           />
         </div>
 
+        {isAdmin && (
+          <div className="filter-group">
+            <label>Modo de tela</label>
+            <select
+              value={screenViewType}
+              onChange={(e) => setScreenViewType(e.target.value)}
+            >
+              <option value="full">Exibir valores financeiros</option>
+              <option value="simplified">Ocultar valores financeiros</option>
+            </select>
+          </div>
+        )}
+
         <button
           type="button"
           className={`btn-primary btn-generate ${loading ? 'btn-loading' : ''}`}
@@ -295,7 +371,7 @@ export function Relatorios({ initialClientId = null }) {
           {loading ? (
             <>
               <span className="spinner-icon" aria-hidden="true" />
-              <span>Processando relatório...</span>
+              <span>Processando...</span>
             </>
           ) : (
             <span>Gerar relatório</span>
@@ -305,7 +381,28 @@ export function Relatorios({ initialClientId = null }) {
 
       {reportData && (
         <div className="report-printable-area">
-          {/* Cartões de Indicadores */}
+          {/* Cabeçalho do PDF com Logotipo da AS&V */}
+          <div className="report-pdf-header print-only">
+            <div className="report-pdf-brand">
+              <img
+                src="/Logo-Original.webp"
+                alt="AS&V Growth Partner"
+                className="report-pdf-logo"
+              />
+              <span className="report-pdf-sysname">Sistema de Controle de Horas (SCH)</span>
+            </div>
+            <div className="report-pdf-meta">
+              <span className="report-pdf-tag">
+                <span className="pdf-tag-full">Relatório Executivo / Fechamento de Horas</span>
+                <span className="pdf-tag-simplified">Relatório Operacional de Atividades</span>
+              </span>
+              <span className="report-pdf-period">
+                Período: {new Date(startDate + 'T00:00:00').toLocaleDateString('pt-BR')} a {new Date(endDate + 'T00:00:00').toLocaleDateString('pt-BR')}
+              </span>
+            </div>
+          </div>
+
+          {/* Cards de Métricas Consolidadas */}
           <div className="relatorios-metrics-grid">
             <div className="metric-card">
               <span className="metric-label">Horas trabalhadas</span>
@@ -319,9 +416,10 @@ export function Relatorios({ initialClientId = null }) {
               <span className="metric-footer">{reportData.totalEntriesCount} apontamentos encerrados</span>
             </div>
 
-            <div className="metric-card">
+            {/* Exibido na tela conforme isFinancialOnScreen e controlado no PDF pela classe print-mode */}
+            <div className={`metric-card financial-element ${!isFinancialOnScreen ? 'screen-hidden' : ''}`}>
               <span className="metric-label">Total dos serviços</span>
-              <div className="metric-value" style={{ color: 'var(--color-primary)' }}>
+              <div className="metric-value" style={{ color: 'var(--color-primary, #000080)' }}>
                 {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(
                   reportData.totalFinancial
                 )}
@@ -335,9 +433,12 @@ export function Relatorios({ initialClientId = null }) {
           {/* Tabela de Fechamento */}
           <div className="relatorios-table-card">
             <div className="report-table-header">
-              <h3>{reportData.client.name}</h3>
-              <span>
-                {reportData.client.service} &bull; {new Date(startDate + 'T00:00:00').toLocaleDateString('pt-BR')} a {new Date(endDate + 'T00:00:00').toLocaleDateString('pt-BR')}
+              <div>
+                <h3>{reportData.client.name}</h3>
+                <span className="client-service-desc">{reportData.client.service}</span>
+              </div>
+              <span className="report-table-dates">
+                {new Date(startDate + 'T00:00:00').toLocaleDateString('pt-BR')} a {new Date(endDate + 'T00:00:00').toLocaleDateString('pt-BR')}
               </span>
             </div>
 
@@ -347,8 +448,8 @@ export function Relatorios({ initialClientId = null }) {
                   <th>ATIVIDADE / DESCRIÇÃO</th>
                   <th style={{ textAlign: 'center' }}>REGISTROS</th>
                   <th>HORAS</th>
-                  <th>VALOR/HORA</th>
-                  <th style={{ textAlign: 'right' }}>SUBTOTAL</th>
+                  <th className={`financial-element ${!isFinancialOnScreen ? 'screen-hidden' : ''}`}>VALOR/HORA</th>
+                  <th className={`financial-element ${!isFinancialOnScreen ? 'screen-hidden' : ''}`} style={{ textAlign: 'right' }}>SUBTOTAL</th>
                 </tr>
               </thead>
               <tbody>
@@ -367,7 +468,7 @@ export function Relatorios({ initialClientId = null }) {
                         <tr 
                           className="tr-summary-row"
                           onClick={() => toggleExpand(row.id)}
-                          title="Clique para ver ou ocultar os apontamentos detalhados"
+                          title="Clique para ver os apontamentos detalhados"
                         >
                           <td>
                             <div className="row-title-area">
@@ -380,19 +481,19 @@ export function Relatorios({ initialClientId = null }) {
                           </td>
                           <td style={{ textAlign: 'center' }}>{row.entriesCount}</td>
                           <td>{formatHoursMinutes(row.seconds)}</td>
-                          <td>
+                          <td className={`financial-element ${!isFinancialOnScreen ? 'screen-hidden' : ''}`}>
                             {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(
                               reportData.client.hourly_rate
                             )}
                           </td>
-                          <td style={{ textAlign: 'right', fontWeight: 600 }}>
+                          <td className={`financial-element ${!isFinancialOnScreen ? 'screen-hidden' : ''}`} style={{ textAlign: 'right', fontWeight: 600 }}>
                             {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(
                               row.subtotal
                             )}
                           </td>
                         </tr>
 
-                        {/* Detalhamento dos Registros em Linhas Verticais */}
+                        {/* Linhas verticais compactas de registros */}
                         <tr className={`tr-details-subrow ${isExpanded ? 'visible-screen' : 'hidden-screen'}`}>
                           <td colSpan={5} className="td-details-container">
                             <div className="details-subtable-wrapper">
@@ -414,7 +515,7 @@ export function Relatorios({ initialClientId = null }) {
                                         <span className="badge-dur">{durFormatted}</span>
                                       </div>
                                       <div className="entry-row-meta">
-                                        <span className="badge-origin">
+                                        <span className={`badge-origin ${!isFinancialOnScreen ? 'screen-hidden' : ''}`}>
                                           {entry.origin === 'timer' ? 'Cronômetro' : 'Manual'}
                                         </span>
                                         {entry.profiles?.full_name && (
@@ -439,8 +540,10 @@ export function Relatorios({ initialClientId = null }) {
                     <td>Total do período</td>
                     <td style={{ textAlign: 'center' }}>{reportData.totalEntriesCount}</td>
                     <td>{formatHoursMinutes(reportData.totalSeconds)}</td>
-                    <td>{reportData.totalDecimalHours.toFixed(2)} h</td>
-                    <td style={{ textAlign: 'right', fontWeight: 700 }}>
+                    <td className={`financial-element ${!isFinancialOnScreen ? 'screen-hidden' : ''}`}>
+                      {reportData.totalDecimalHours.toFixed(2)} h
+                    </td>
+                    <td className={`financial-element ${!isFinancialOnScreen ? 'screen-hidden' : ''}`} style={{ textAlign: 'right', fontWeight: 700 }}>
                       {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(
                         reportData.totalFinancial
                       )}
@@ -452,7 +555,7 @@ export function Relatorios({ initialClientId = null }) {
 
             <footer className="report-notice">
               <p>
-                As horas em andamento não integram este relatório. Fechamento calculado estritamente sobre apontamentos encerrados.
+                As sessões com cronômetro em andamento não integram este fechamento.
               </p>
               <span className="report-timestamp">
                 Gerado em {reportData.generatedAt.toLocaleDateString('pt-BR')} às {reportData.generatedAt.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })} por {profile?.full_name || user?.email}
