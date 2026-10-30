@@ -5,6 +5,7 @@ import { Sidebar } from './components/Sidebar/Sidebar';
 import { Clientes } from './pages/Clientes/Clientes';
 import { DetalheCliente } from './pages/DetalheCliente/DetalheCliente';
 import { Relatorios } from './pages/Relatorios/Relatorios';
+import { Usuarios } from './pages/Usuarios/Usuarios';
 
 // Modais da Aplicação
 import { ModalCliente } from './components/ModalCliente/ModalCliente';
@@ -15,6 +16,7 @@ import { ModalExcluirAtividade } from './components/ModalExcluir/ModalExcluirAti
 import { ModalExcluirCliente } from './components/ModalExcluir/ModalExcluirCliente';
 import { ModalProrrogar } from './components/ModalProrrogar/ModalProrrogar';
 import { ModalUsuario } from './components/ModalUsuario/ModalUsuario';
+import { ModalEditarUsuario } from './components/ModalUsuario/ModalEditarUsuario';
 import { ModalHistoricoLogs } from './components/ModalHistoricoLogs/ModalHistoricoLogs';
 
 import './App.css';
@@ -24,19 +26,14 @@ function MainApp() {
   const [currentView, setCurrentView] = useState('clientes');
   const [selectedClient, setSelectedClient] = useState(null);
 
-  // Estados dos Modais de Clientes e Contratos
+  // Estados dos Modais
   const [isClientModalOpen, setIsClientModalOpen] = useState(false);
   const [clientToEdit, setClientToEdit] = useState(null);
   const [clientToProrrogar, setClientToProrrogar] = useState(null);
   const [deletingClient, setDeletingClient] = useState(null);
-
-  // Estado do Modal de Usuários (Admin)
+  const [userToEdit, setUserToEdit] = useState(null);
   const [isUserModalOpen, setIsUserModalOpen] = useState(false);
-
-  // Estado do Modal de Histórico e Auditoria de Logs (Admin)
   const [isAuditLogsOpen, setIsAuditLogsOpen] = useState(false);
-
-  // Estados dos Modais de Atividades e Apontamentos
   const [isActivityModalOpen, setIsActivityModalOpen] = useState(false);
   const [isManualModalOpen, setIsManualModalOpen] = useState(false);
   const [editingActivity, setEditingActivity] = useState(null);
@@ -45,22 +42,14 @@ function MainApp() {
   const [clientActivities, setClientActivities] = useState([]);
   const [refreshTrigger, setRefreshTrigger] = useState(0);
 
-  if (!user) {
-    return <Login />;
-  }
+  if (!user) return <Login />;
 
-  const handleSelectClient = (client) => {
-    setSelectedClient(client);
-  };
-
+  const handleSelectClient = (client) => setSelectedClient(client);
   const handleBackToClients = () => {
     setSelectedClient(null);
     setRefreshTrigger((prev) => prev + 1);
   };
-
-  const triggerRefresh = () => {
-    setRefreshTrigger((prev) => prev + 1);
-  };
+  const triggerRefresh = () => setRefreshTrigger((prev) => prev + 1);
 
   return (
     <div className="app-layout">
@@ -118,9 +107,16 @@ function MainApp() {
         {currentView === 'relatorios' && (
           <Relatorios initialClientId={selectedClient?.id} />
         )}
+
+        {currentView === 'usuarios' && (
+          <Usuarios
+            onOpenNewUserModal={() => setIsUserModalOpen(true)}
+            onOpenEditUserModal={(u) => setUserToEdit(u)}
+          />
+        )}
       </main>
 
-      {/* Modais Globais */}
+      {/* Modais Globais - Restaurados corretamente */}
       <ModalCliente
         isOpen={isClientModalOpen}
         clientToEdit={clientToEdit}
@@ -130,27 +126,32 @@ function MainApp() {
         }}
         onClientSaved={triggerRefresh}
       />
-
       <ModalProrrogar
         isOpen={!!clientToProrrogar}
         client={clientToProrrogar}
         onClose={() => setClientToProrrogar(null)}
         onUpdated={triggerRefresh}
       />
-
+      
+      {/* RESTAURADO: Modal de Criação de Usuário */}
       <ModalUsuario
         isOpen={isUserModalOpen}
         onClose={() => setIsUserModalOpen(false)}
         onUserCreated={triggerRefresh}
       />
-
+      
+      <ModalEditarUsuario
+        isOpen={!!userToEdit}
+        user={userToEdit}
+        onClose={() => setUserToEdit(null)}
+        onUserUpdated={triggerRefresh}
+      />
       <ModalAtividade
         isOpen={isActivityModalOpen}
         client={selectedClient}
         onClose={() => setIsActivityModalOpen(false)}
         onActivityCreated={triggerRefresh}
       />
-
       <ModalLancamento
         isOpen={isManualModalOpen}
         client={selectedClient}
@@ -158,7 +159,6 @@ function MainApp() {
         onClose={() => setIsManualModalOpen(false)}
         onEntryCreated={triggerRefresh}
       />
-
       <ModalEditarAtividade
         isOpen={!!editingActivity}
         activity={editingActivity}
@@ -166,7 +166,6 @@ function MainApp() {
         onClose={() => setEditingActivity(null)}
         onUpdated={triggerRefresh}
       />
-
       <ModalExcluirAtividade
         isOpen={!!deletingActivity}
         activity={deletingActivity}
@@ -174,8 +173,6 @@ function MainApp() {
         onClose={() => setDeletingActivity(null)}
         onDeleted={triggerRefresh}
       />
-
-      {/* Modal de Exclusão de Cliente com Motivo e Auditoria */}
       <ModalExcluirCliente
         isOpen={!!deletingClient}
         client={deletingClient}

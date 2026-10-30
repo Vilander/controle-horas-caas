@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { useAuth } from '../../context/AuthContext';
+import { supabase } from '../../lib/supabaseClient';
 import './Login.css';
 
 export function Login() {
@@ -15,13 +16,40 @@ export function Login() {
     setIsSubmitting(true);
 
     try {
-      await signIn(email, password);
+      // 1. Tenta autenticar na API do Supabase
+      const { user } = await signIn(email.trim(), password);
+
+      // 2. Valida se o usuário existe e se o status no perfil está ativo
+      if (user) {
+        const { data: profile, error: profileError } = await supabase
+          .from('profiles')
+          .select('status, role')
+          .eq('id', user.id)
+          .maybeSingle();
+
+        if (profileError) {
+          throw new Error('Falha ao validar permissões do perfil.');
+        }
+
+        // CORREÇÃO AQUI: Bloqueia se o perfil vier vazio (RLS) ou se estiver inativo
+        if (!profile || profile.status === 'inativo') {
+          // Desconecta imediatamente e bloqueia a navegação
+          await supabase.auth.signOut();
+          throw new Error('Sua conta foi desativada, procure um administrador.');
+        }
+      }
     } catch (err) {
-      setErrorMsg(
-        err.message === 'Invalid login credentials'
-          ? 'E-mail ou senha incorretos.'
-          : 'Erro ao autenticar. Verifique sua conexão e tente novamente.'
-      );
+      const message = err?.message || '';
+
+      if (message.includes('Invalid login credentials')) {
+        setErrorMsg('E-mail ou senha incorretos.');
+      } else if (message.includes('Email not confirmed')) {
+        setErrorMsg('E-mail ainda não confirmado. Verifique sua caixa de entrada.');
+      } else if (message.includes('desativada')) {
+        setErrorMsg(message);
+      } else {
+        setErrorMsg('Erro ao autenticar. Verifique sua conexão e tente novamente.');
+      }
     } finally {
       setIsSubmitting(false);
     }
@@ -30,25 +58,38 @@ export function Login() {
   return (
     <div className="login-container">
       <div className="login-card">
-        <div className="login-header">
-          {/* <span className="login-badge">AS&amp;V Growth Partner</span> */}
-          <img src="../../public/Logo-Original.webp" alt="AS&amp;V Growth Partner" className="login-logo"/>
-          <h1 className="login-title">Sistema de Controle de Horas</h1>
+        <header className="login-header">
+          <img 
+            src="/Logo-Original.webp" 
+            alt="AS&V Growth Partner" 
+            className="login-logo"
+            onError={(e) => { 
+              e.currentTarget.style.display = 'none'; 
+            }}
+          />
+          <span className="login-badge">SISTEMA DE CONTROLE DE HORAS (SCH)</span>
+          <h1 className="login-title">Acesso ao Painel</h1>
           <p className="login-subtitle">
-            Acesse para acompanhar atividades e lançamentos da carteira.
+            Informe suas credenciais corporativas para gerenciar atividades e lançamentos.
           </p>
-        </div>
+        </header>
 
-        {errorMsg && <div className="login-alert-error">{errorMsg}</div>}
+        {errorMsg && (
+          <div className="login-alert-error" role="alert">
+            <span className="alert-icon">⚠</span>
+            <span>{errorMsg}</span>
+          </div>
+        )}
 
         <form onSubmit={handleSubmit} className="login-form">
           <div className="login-field">
-            <label htmlFor="email">E-mail corporativo</label>
+            <label htmlFor="login-email">E-mail corporativo</label>
             <input
-              id="email"
+              id="login-email"
               type="email"
               required
-              placeholder="seu.email@empresa.com"
+              autoComplete="email"
+              placeholder="seu.nome@asvgrowth.com.br"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               disabled={isSubmitting}
@@ -56,11 +97,12 @@ export function Login() {
           </div>
 
           <div className="login-field">
-            <label htmlFor="password">Senha</label>
+            <label htmlFor="login-password">Senha de acesso</label>
             <input
-              id="password"
+              id="login-password"
               type="password"
               required
+              autoComplete="current-password"
               placeholder="••••••••"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
@@ -71,9 +113,9 @@ export function Login() {
           <button
             type="submit"
             className="login-btn-submit"
-            disabled={isSubmitting}
+            disabled={isSubmitting || !email.trim() || !password}
           >
-            {isSubmitting ? 'Entrando...' : 'Entrar no sistema'}
+            {isSubmitting ? 'Validando acesso...' : 'Entrar no sistema'}
           </button>
         </form>
 

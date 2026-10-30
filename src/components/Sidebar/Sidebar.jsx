@@ -51,6 +51,7 @@ export function Sidebar({ currentView, setCurrentView, onNavigate, onSignOut, on
             >
               Clientes
             </button>
+
             <button
               type="button"
               className={`sidebar-nav-item ${currentView === 'relatorios' ? 'active' : ''}`}
@@ -59,7 +60,18 @@ export function Sidebar({ currentView, setCurrentView, onNavigate, onSignOut, on
               Relatórios
             </button>
 
-            {/* Botão de Histórico / Logs visível apenas para Admin */}
+            {/* Novo acesso ao Painel de Usuários (Apenas Administradores) */}
+            {isAdmin && (
+              <button
+                type="button"
+                className={`sidebar-nav-item ${currentView === 'usuarios' ? 'active' : ''}`}
+                onClick={() => navigate && navigate('usuarios')}
+              >
+                Equipe / Usuários
+              </button>
+            )}
+
+            {/* Modal de Auditoria e Logs */}
             {isAdmin && onOpenAuditLogs && (
               <button
                 type="button"
