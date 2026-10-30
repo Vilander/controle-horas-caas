@@ -31,8 +31,9 @@ export function Login() {
     <div className="login-container">
       <div className="login-card">
         <div className="login-header">
-          <span className="login-badge">AS&amp;V Growth Partner</span>
-          <h1 className="login-title">Controle de Horas</h1>
+          {/* <span className="login-badge">AS&amp;V Growth Partner</span> */}
+          <img src="../../public/Logo-Original.webp" alt="AS&amp;V Growth Partner" className="login-logo"/>
+          <h1 className="login-title">Sistema de Controle de Horas</h1>
           <p className="login-subtitle">
             Acesse para acompanhar atividades e lançamentos da carteira.
           </p>

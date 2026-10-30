@@ -3,7 +3,6 @@ import { supabase } from '../../lib/supabaseClient';
 import './ModalAtividade.css';
 
 export function ModalEditarAtividade({ isOpen, activity, client, onClose, onUpdated }) {
-  // 1. Definição obrigatória de todos os hooks no topo (sem condicionais prévias)
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
   const [profiles, setProfiles] = useState([]);
@@ -62,7 +61,6 @@ export function ModalEditarAtividade({ isOpen, activity, client, onClose, onUpda
     }
   };
 
-  // 2. Early return seguro colocado apenas APÓS todos os hooks
   if (!isOpen || !activity) return null;
 
   const toggleUser = (userId) => {
@@ -76,19 +74,20 @@ export function ModalEditarAtividade({ isOpen, activity, client, onClose, onUpda
     const startDate = new Date(entry.started_at);
     const endDate = entry.ended_at ? new Date(entry.ended_at) : new Date();
 
-    const localDate = startDate.toLocaleDateString('en-CA');
+    const localYear = startDate.getFullYear();
+    const localMonth = String(startDate.getMonth() + 1).padStart(2, '0');
+    const localDay = String(startDate.getDate()).padStart(2, '0');
     const startH = String(startDate.getHours()).padStart(2, '0');
     const startM = String(startDate.getMinutes()).padStart(2, '0');
     const endH = String(endDate.getHours()).padStart(2, '0');
     const endM = String(endDate.getMinutes()).padStart(2, '0');
 
-    setEntryDate(localDate);
+    setEntryDate(`${localYear}-${localMonth}-${localDay}`);
     setEntryStartTime(`${startH}:${startM}`);
     setEntryEndTime(`${endH}:${endM}`);
     setEntryReason(entry.correction_reason || '');
   };
 
-  // Cálculo da nova duração sem depender de useMemo condicional
   const calculateDurationText = () => {
     if (!entryStartTime || !entryEndTime) return '0h 00min';
     const [sH, sM] = entryStartTime.split(':').map(Number);
@@ -145,7 +144,7 @@ export function ModalEditarAtividade({ isOpen, activity, client, onClose, onUpda
         await supabase.from('activity_assignees').insert(rows);
       }
 
-      // 3. Atualiza apontamento em edição se houver
+      // 3. Atualiza apontamento em edição (se houver)
       if (editingEntry) {
         const [sH, sM] = entryStartTime.split(':').map(Number);
         const [eH, eM] = entryEndTime.split(':').map(Number);
@@ -154,14 +153,17 @@ export function ModalEditarAtividade({ isOpen, activity, client, onClose, onUpda
           throw new Error('A hora final do apontamento deve ser maior que a hora inicial.');
         }
 
-        const newStartIso = new Date(`${entryDate}T${entryStartTime}:00`).toISOString();
-        const newEndIso = new Date(`${entryDate}T${entryEndTime}:00`).toISOString();
+        const [year, month, day] = entryDate.split('-').map(Number);
+        const startObj = new Date(year, month - 1, day, sH, sM, 0);
+        const endObj = new Date(year, month - 1, day, eH, eM, 0);
 
+        // Envia apenas os timestamps e a justificativa
+        // duration_seconds é calculado pelo PostgreSQL (GENERATED ALWAYS)
         const { error: entryError } = await supabase
           .from('time_entries')
           .update({
-            started_at: newStartIso,
-            ended_at: newEndIso,
+            started_at: startObj.toISOString(),
+            ended_at: endObj.toISOString(),
             correction_reason: entryReason.trim() || null,
           })
           .eq('id', editingEntry.id);
@@ -217,7 +219,6 @@ export function ModalEditarAtividade({ isOpen, activity, client, onClose, onUpda
             />
           </div>
 
-          {/* Seleção de Múltiplos Responsáveis */}
           <div className="form-field full-width">
             <label>Responsáveis pela atividade (operação / relatório)</label>
             <div className="assignees-pill-container">
@@ -237,7 +238,6 @@ export function ModalEditarAtividade({ isOpen, activity, client, onClose, onUpda
             </div>
           </div>
 
-          {/* Lista de Registros de Tempo */}
           <div className="form-field full-width">
             <label>Registros de tempo ({entries.length})</label>
             {entries.length === 0 ? (
@@ -297,7 +297,6 @@ export function ModalEditarAtividade({ isOpen, activity, client, onClose, onUpda
             )}
           </div>
 
-          {/* Seção Dinâmica de Correção de Apontamento */}
           {editingEntry && (
             <div className="correct-entry-box">
               <div className="correct-entry-header">

@@ -1,0 +1,356 @@
+/* ==========================================================================
+   MODAL DETALHES DO CLIENTE — 50% DA LARGURA DA TELA
+   Tokens: #000080 (Primary), #71226B (Accent), #0D0D11 (Base Text)
+   ========================================================================== */
+
+/* Backdrop */
+.modal-detalhes-backdrop {
+  position: fixed;
+  inset: 0;
+  background-color: rgba(13, 13, 17, 0.6);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  backdrop-filter: blur(3px);
+  padding: 20px;
+  box-sizing: border-box;
+}
+
+/* Modal ocupando 50% da viewport (com piso de 680px para não espremer em telas menores) */
+.modal-detalhes-dialog {
+  background-color: #FFFFFF;
+  border-radius: 8px;
+  width: 50vw;
+  min-width: 680px;
+  max-width: 95vw;
+  max-height: 90vh;
+  box-shadow: 0 20px 45px rgba(13, 13, 17, 0.25);
+  border: 1px solid var(--color-border, #E5E7EB);
+  display: flex;
+  flex-direction: column;
+  position: relative;
+  box-sizing: border-box;
+}
+
+.modal-header {
+  padding: 20px 28px;
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  border-bottom: 1px solid var(--color-border, #E5E7EB);
+}
+
+.modal-title {
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--color-base, #0D0D11);
+  margin: 0 0 4px 0;
+}
+
+.modal-subtitle {
+  font-size: 13px;
+  color: var(--color-text-muted, #6B7280);
+  margin: 0;
+}
+
+.modal-btn-close {
+  background: transparent;
+  border: none;
+  font-size: 24px;
+  color: var(--color-text-muted, #6B7280);
+  cursor: pointer;
+  line-height: 1;
+  padding: 0 4px;
+}
+
+.modal-btn-close:hover {
+  color: var(--color-base, #0D0D11);
+}
+
+.detalhes-content-scroll {
+  padding: 24px 28px;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 22px;
+}
+
+.detalhes-section {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.detalhes-section-title {
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--color-text-muted, #6B7280);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  border-bottom: 1px solid var(--color-border, #E5E7EB);
+  padding-bottom: 6px;
+  margin: 0;
+}
+
+/* Campos em 2 a 3 colunas fluídas */
+.detalhes-grid-fields {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 14px 20px;
+}
+
+.detalhe-item {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.detalhe-label {
+  font-size: 11px;
+  color: var(--color-text-muted, #6B7280);
+}
+
+.detalhe-val {
+  font-size: 13px;
+  color: var(--color-base, #0D0D11);
+}
+
+.detalhe-pill {
+  display: inline-block;
+  font-size: 11px;
+  font-weight: 600;
+  padding: 2px 8px;
+  border-radius: 12px;
+  width: fit-content;
+}
+
+.pill-active {
+  background-color: #E6F4EA;
+  color: #137333;
+}
+
+.pill-inactive {
+  background-color: #FCE8E6;
+  color: #C5221F;
+}
+
+/* Indicadores de Horas e Valores */
+.detalhes-cards-row {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 12px;
+}
+
+.detalhe-stat-card {
+  background-color: #FAFAFB;
+  border: 1px solid var(--color-border, #E5E7EB);
+  border-radius: 6px;
+  padding: 14px 16px;
+  display: flex;
+  flex-direction: column;
+}
+
+.stat-card-danger {
+  border-color: #FCA5A5;
+  background-color: #FFFDFD;
+}
+
+.stat-label {
+  font-size: 11px;
+  color: var(--color-text-muted, #6B7280);
+  margin-bottom: 4px;
+}
+
+.stat-val {
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--color-base, #0D0D11);
+  margin-bottom: 2px;
+}
+
+.stat-footer {
+  font-size: 11px;
+  color: var(--color-text-subtle, #9CA3AF);
+}
+
+/* Tabela de Atividades */
+.detalhes-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.detalhes-table th {
+  padding: 10px 12px;
+  background-color: #FAFAFB;
+  border-bottom: 1px solid var(--color-border, #E5E7EB);
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--color-text-muted, #6B7280);
+  text-align: left;
+}
+
+.detalhes-table td {
+  padding: 12px;
+  border-bottom: 1px solid var(--color-border, #E5E7EB);
+  font-size: 12px;
+  color: var(--color-base, #0D0D11);
+}
+
+.table-desc {
+  font-size: 11px;
+  color: var(--color-text-muted, #6B7280);
+  margin-top: 2px;
+}
+
+.modal-footer {
+  padding: 16px 28px;
+  border-top: 1px solid var(--color-border, #E5E7EB);
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+}
+
+.btn-print-pdf {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background-color: var(--color-primary, #000080);
+  color: #FFFFFF;
+  border: none;
+  border-radius: 6px;
+  padding: 0 18px;
+  height: 38px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.btn-print-pdf:hover {
+  opacity: 0.92;
+}
+
+.print-only {
+  display: none;
+}
+
+/* ==========================================================================
+   REGRAS DE IMPRESSÃO / PDF (@media print)
+   ========================================================================== */
+@media print {
+  @page {
+    size: A4 portrait;
+    margin: 15mm 12mm 15mm 12mm;
+  }
+
+  body {
+    background: #FFFFFF !important;
+    margin: 0 !important;
+    padding: 0 !important;
+  }
+
+  /* Oculta navegação e o restante da interface */
+  .sidebar-container,
+  .app-main-content > *:not(.detalhe-page),
+  .detalhe-page > *:not(.modal-detalhes-backdrop),
+  .no-print {
+    display: none !important;
+  }
+
+  /* Libera o modal para preencher a página A4 impressa */
+  .modal-detalhes-backdrop {
+    position: static !important;
+    display: block !important;
+    background: transparent !important;
+    padding: 0 !important;
+    backdrop-filter: none !important;
+  }
+
+  .modal-detalhes-dialog {
+    position: static !important;
+    width: 100% !important;
+    min-width: 100% !important;
+    max-width: 100% !important;
+    max-height: none !important;
+    border: none !important;
+    box-shadow: none !important;
+    padding: 0 !important;
+    overflow: visible !important;
+  }
+
+  .detalhes-content-scroll {
+    overflow: visible !important;
+    padding: 0 !important;
+    gap: 16px !important;
+  }
+
+  .print-only {
+    display: flex !important;
+  }
+
+  .print-pdf-header {
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 2px solid var(--color-primary, #000080);
+    padding-bottom: 12px;
+    margin-bottom: 16px;
+  }
+
+  .print-pdf-brand {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+  }
+
+  .print-pdf-logo {
+    max-width: 140px;
+    height: auto;
+    object-fit: contain;
+  }
+
+  .print-pdf-sysname {
+    font-size: 10px;
+    font-weight: 700;
+    color: #6B7280;
+    text-transform: uppercase;
+    display: block;
+    letter-spacing: 0.05em;
+  }
+
+  .print-pdf-title {
+    font-size: 16px;
+    font-weight: 700;
+    color: var(--color-primary, #000080);
+    margin: 2px 0 0 0;
+  }
+
+  .print-pdf-meta {
+    text-align: right;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    font-size: 10px;
+    color: #6B7280;
+  }
+
+  .print-pdf-auth {
+    font-weight: 700;
+    color: var(--color-base, #0D0D11);
+  }
+
+  .detalhes-grid-fields {
+    grid-template-columns: repeat(3, 1fr) !important;
+    gap: 10px 14px !important;
+  }
+
+  .detalhe-stat-card {
+    border: 1px solid #D1D5DB !important;
+    background-color: #FAFAFA !important;
+    padding: 10px 12px !important;
+  }
+
+  .detalhes-table th,
+  .detalhes-table td {
+    padding: 8px 10px !important;
+  }
+}

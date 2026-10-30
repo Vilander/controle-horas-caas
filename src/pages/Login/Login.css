@@ -130,3 +130,9 @@
   color: var(--color-text-muted, #6B7280);
   margin: 0;
 }
+
+.login-logo {
+  width: 120px;
+  height: auto;
+  margin-bottom: 12px;
+}
