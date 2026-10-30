@@ -160,3 +160,16 @@
   color: var(--color-danger, #D32F2F);
   background-color: #FDF2F2;
 }
+
+.sidebar-nav-audit {
+  margin-top: 8px;
+  border-top: 1px dashed var(--color-border, #E5E7EB) !important;
+  border-radius: 0 0 6px 6px !important;
+  color: var(--color-primary, #000080) !important;
+  font-weight: 600 !important;
+}
+
+.sidebar-nav-audit:hover {
+  background-color: #F0EDF5 !important;
+  color: var(--color-accent, #71226B) !important;
+}

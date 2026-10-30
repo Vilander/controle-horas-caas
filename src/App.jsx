@@ -12,13 +12,15 @@ import { ModalAtividade } from './components/ModalAtividade/ModalAtividade';
 import { ModalLancamento } from './components/ModalLancamento/ModalLancamento';
 import { ModalEditarAtividade } from './components/ModalAtividade/ModalEditarAtividade';
 import { ModalExcluirAtividade } from './components/ModalExcluir/ModalExcluirAtividade';
+import { ModalExcluirCliente } from './components/ModalExcluir/ModalExcluirCliente';
 import { ModalProrrogar } from './components/ModalProrrogar/ModalProrrogar';
 import { ModalUsuario } from './components/ModalUsuario/ModalUsuario';
+import { ModalHistoricoLogs } from './components/ModalHistoricoLogs/ModalHistoricoLogs';
 
 import './App.css';
 
 function MainApp() {
-  const { user } = useAuth();
+  const { user, profile, isAdmin } = useAuth();
   const [currentView, setCurrentView] = useState('clientes');
   const [selectedClient, setSelectedClient] = useState(null);
 
@@ -26,9 +28,13 @@ function MainApp() {
   const [isClientModalOpen, setIsClientModalOpen] = useState(false);
   const [clientToEdit, setClientToEdit] = useState(null);
   const [clientToProrrogar, setClientToProrrogar] = useState(null);
+  const [deletingClient, setDeletingClient] = useState(null);
 
   // Estado do Modal de Usuários (Admin)
   const [isUserModalOpen, setIsUserModalOpen] = useState(false);
+
+  // Estado do Modal de Histórico e Auditoria de Logs (Admin)
+  const [isAuditLogsOpen, setIsAuditLogsOpen] = useState(false);
 
   // Estados dos Modais de Atividades e Apontamentos
   const [isActivityModalOpen, setIsActivityModalOpen] = useState(false);
@@ -36,7 +42,6 @@ function MainApp() {
   const [editingActivity, setEditingActivity] = useState(null);
   const [deletingActivity, setDeletingActivity] = useState(null);
 
-  // Lista de atividades do cliente selecionado para seleção no apontamento manual
   const [clientActivities, setClientActivities] = useState([]);
   const [refreshTrigger, setRefreshTrigger] = useState(0);
 
@@ -65,10 +70,16 @@ function MainApp() {
           setSelectedClient(null);
           setCurrentView(view);
         }}
+        onNavigate={(view) => {
+          setSelectedClient(null);
+          setCurrentView(view);
+        }}
+        userProfile={profile}
+        user={user}
+        onOpenAuditLogs={() => setIsAuditLogsOpen(true)}
       />
 
       <main className="app-main-content">
-        {/* Rota 1: Lista de Clientes */}
         {currentView === 'clientes' && !selectedClient && (
           <Clientes
             key={refreshTrigger}
@@ -81,15 +92,15 @@ function MainApp() {
               setClientToEdit(client);
               setIsClientModalOpen(true);
             }}
+            onOpenDeleteClientModal={(client) => setDeletingClient(client)}
             onOpenNewUserModal={() => setIsUserModalOpen(true)}
             onOpenProrrogarModal={(client) => setClientToProrrogar(client)}
           />
         )}
 
-        {/* Rota 2: Detalhes e Planilha de Atividades do Cliente */}
         {currentView === 'clientes' && selectedClient && (
           <DetalheCliente
-            key={refreshTrigger}
+            key={`${selectedClient.id}-${refreshTrigger}`}
             client={selectedClient}
             onBack={handleBackToClients}
             onOpenNewActivity={() => setIsActivityModalOpen(true)}
@@ -97,18 +108,19 @@ function MainApp() {
             onActivitiesLoaded={(acts) => setClientActivities(acts)}
             onEditActivity={(act) => setEditingActivity(act)}
             onDeleteActivity={(act) => setDeletingActivity(act)}
+            onOpenEditClientModal={(client) => {
+              setClientToEdit(client);
+              setIsClientModalOpen(true);
+            }}
           />
         )}
 
-        {/* Rota 3: Relatório de Horas e Fechamento */}
         {currentView === 'relatorios' && (
           <Relatorios initialClientId={selectedClient?.id} />
         )}
       </main>
 
-      {/* --- DIÁLOGOS E MODAIS --- */}
-
-      {/* 1. Cadastro e Edição de Clientes (com Vigência de Contrato) */}
+      {/* Modais Globais */}
       <ModalCliente
         isOpen={isClientModalOpen}
         clientToEdit={clientToEdit}
@@ -119,7 +131,6 @@ function MainApp() {
         onClientSaved={triggerRefresh}
       />
 
-      {/* 2. Prorrogação ou Encerramento de Contrato */}
       <ModalProrrogar
         isOpen={!!clientToProrrogar}
         client={clientToProrrogar}
@@ -127,14 +138,12 @@ function MainApp() {
         onUpdated={triggerRefresh}
       />
 
-      {/* 3. Cadastro de Novo Usuário (Privilégios Admin / Consultant) */}
       <ModalUsuario
         isOpen={isUserModalOpen}
         onClose={() => setIsUserModalOpen(false)}
         onUserCreated={triggerRefresh}
       />
 
-      {/* 4. Nova Atividade */}
       <ModalAtividade
         isOpen={isActivityModalOpen}
         client={selectedClient}
@@ -142,7 +151,6 @@ function MainApp() {
         onActivityCreated={triggerRefresh}
       />
 
-      {/* 5. Lançamento Manual de Horas */}
       <ModalLancamento
         isOpen={isManualModalOpen}
         client={selectedClient}
@@ -151,7 +159,6 @@ function MainApp() {
         onEntryCreated={triggerRefresh}
       />
 
-      {/* 6. Edição de Atividade, Responsáveis e Correção de Apontamentos */}
       <ModalEditarAtividade
         isOpen={!!editingActivity}
         activity={editingActivity}
@@ -160,7 +167,6 @@ function MainApp() {
         onUpdated={triggerRefresh}
       />
 
-      {/* 7. Exclusão de Atividade */}
       <ModalExcluirAtividade
         isOpen={!!deletingActivity}
         activity={deletingActivity}
@@ -168,6 +174,21 @@ function MainApp() {
         onClose={() => setDeletingActivity(null)}
         onDeleted={triggerRefresh}
       />
+
+      {/* Modal de Exclusão de Cliente com Motivo e Auditoria */}
+      <ModalExcluirCliente
+        isOpen={!!deletingClient}
+        client={deletingClient}
+        onClose={() => setDeletingClient(null)}
+        onDeleted={triggerRefresh}
+      />
+
+      {isAdmin && (
+        <ModalHistoricoLogs
+          isOpen={isAuditLogsOpen}
+          onClose={() => setIsAuditLogsOpen(false)}
+        />
+      )}
     </div>
   );
 }

@@ -10,32 +10,39 @@
   justify-content: center;
   z-index: 1000;
   backdrop-filter: blur(3px);
+  padding: 20px;
+  box-sizing: border-box;
 }
 
 .modal-cliente-dialog {
   background-color: #FFFFFF;
   border-radius: 8px;
-  width: 100%;
-  max-width: 600px;
-  max-height: 94vh;
-  overflow-y: auto;
+  /* Largura ampliada para 50% da viewport conforme solicitado */
+  width: 50vw;
+  min-width: 720px;
+  max-width: 960px;
+  max-height: 90vh;
   box-shadow: 0 16px 36px rgba(13, 13, 17, 0.18);
   border: 1px solid var(--color-border, #E5E7EB);
   display: flex;
   flex-direction: column;
+  overflow: hidden; /* Elimina rolagem no contêiner raiz */
+  box-sizing: border-box;
 }
 
-/* Cabeçalho */
+/* Cabeçalho Fixo */
 .modal-header {
-  padding: 24px 28px 18px;
+  padding: 20px 28px 16px;
   display: flex;
   justify-content: space-between;
   align-items: flex-start;
   border-bottom: 1px solid var(--color-border, #E5E7EB);
+  flex-shrink: 0;
+  background-color: #FFFFFF;
 }
 
 .modal-title {
-  font-size: 20px;
+  font-size: 19px;
   font-weight: 700;
   color: var(--color-base, #0D0D11);
   margin: 0 0 4px 0;
@@ -65,28 +72,43 @@
 
 /* Alerta de Validação */
 .modal-alert-error {
-  margin: 16px 28px 0;
-  padding: 10px 14px;
+  margin: 12px 28px 0;
+  padding: 8px 14px;
   background-color: #FEE2E2;
   border: 1px solid #FCA5A5;
   color: #DC2626;
   border-radius: 6px;
   font-size: 12px;
   font-weight: 500;
+  flex-shrink: 0;
 }
 
-/* Formulário e Seções */
+/* Formulário Principal */
 .modal-form {
-  padding: 20px 28px 24px;
   display: flex;
   flex-direction: column;
-  gap: 22px;
+  flex: 1;
+  overflow: hidden;
+  min-height: 0;
+}
+
+/* Área Interna de Rolagem: Apenas Vertical, Zero Rolagem Horizontal */
+.modal-form-scrollable {
+  padding: 20px 28px;
+  overflow-y: auto;
+  overflow-x: hidden; /* Elimina definitivamente o scroll horizontal */
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  flex: 1;
+  box-sizing: border-box;
 }
 
 .form-section {
   display: flex;
   flex-direction: column;
   gap: 12px;
+  width: 100%;
 }
 
 .section-title {
@@ -98,10 +120,13 @@
   margin-bottom: 2px;
 }
 
+/* Grid com min-width 0 para evitar estouro de containers em campos select */
 .form-row {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 14px;
+  gap: 16px;
+  width: 100%;
+  box-sizing: border-box;
 }
 
 .form-field {
@@ -109,6 +134,8 @@
   flex-direction: column;
   gap: 6px;
   width: 100%;
+  min-width: 0; /* Previne estouro horizontal de flex/grid */
+  box-sizing: border-box;
 }
 
 .form-field.full-width {
@@ -140,6 +167,7 @@
 
 .form-field input,
 .form-field select {
+  width: 100%;
   height: 38px;
   padding: 0 12px;
   border: 1px solid var(--color-border, #E5E7EB);
@@ -150,6 +178,7 @@
   outline: none;
   font-family: inherit;
   box-sizing: border-box;
+  text-overflow: ellipsis; /* Evita que o texto da opção quebre a largura */
   transition: border-color 0.15s ease, box-shadow 0.15s ease;
 }
 
@@ -159,14 +188,13 @@
   box-shadow: 0 0 0 2px rgba(0, 0, 128, 0.08);
 }
 
-/* ==========================================================================
-   PREFIXO DE MOEDA (CORREÇÃO DA SOBREPOSIÇÃO VISUAL)
-   ========================================================================== */
+/* Prefixo de Moeda R$ */
 .input-currency-wrapper {
   position: relative;
   display: flex;
   align-items: center;
   width: 100%;
+  box-sizing: border-box;
 }
 
 .currency-symbol {
@@ -182,7 +210,7 @@
 .input-currency-wrapper input {
   width: 100%;
   height: 38px;
-  padding-left: 38px !important; /* Espaço suficiente para o símbolo R$ */
+  padding-left: 38px !important;
   padding-right: 12px;
 }
 
@@ -194,37 +222,14 @@
   border-color: #D1D5DB !important;
 }
 
-/* Checkbox de Situação */
-.form-field-checkbox {
-  margin-top: 4px;
-}
-
-.checkbox-container {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  cursor: pointer;
-  user-select: none;
-}
-
-.checkbox-container input[type="checkbox"] {
-  width: 16px;
-  height: 16px;
-  accent-color: var(--color-primary, #000080);
-  cursor: pointer;
-}
-
-.checkbox-text {
-  font-size: 12px;
-  color: var(--color-base, #0D0D11);
-}
-
-/* Nota Informativa (Wireframe Pág. 2) */
+/* Nota Informativa */
 .form-info-notice {
-  background-color: var(--color-bg-app, #F7F7F9);
+  background-color: #F8F9FA;
   border: 1px solid var(--color-border, #E5E7EB);
   border-radius: 6px;
   padding: 10px 14px;
+  width: 100%;
+  box-sizing: border-box;
 }
 
 .form-info-notice p {
@@ -234,14 +239,16 @@
   margin: 0;
 }
 
-/* Rodapé de Ações */
+/* Rodapé de Ações Fixo */
 .modal-footer {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding-top: 16px;
+  padding: 16px 28px;
   border-top: 1px solid var(--color-border, #E5E7EB);
-  margin-top: 4px;
+  background-color: #FFFFFF;
+  flex-shrink: 0;
+  box-sizing: border-box;
 }
 
 .required-legend {
@@ -251,12 +258,12 @@
 
 .modal-actions {
   display: flex;
-  gap: 10px;
+  gap: 12px;
 }
 
 .btn-secondary {
   height: 38px;
-  padding: 0 16px;
+  padding: 0 18px;
   background-color: transparent;
   border: 1px solid var(--color-border, #E5E7EB);
   border-radius: 6px;
@@ -273,7 +280,7 @@
 
 .btn-primary {
   height: 38px;
-  padding: 0 20px;
+  padding: 0 22px;
   background-color: var(--color-primary, #000080);
   border: none;
   border-radius: 6px;
@@ -281,7 +288,7 @@
   font-weight: 600;
   color: #FFFFFF;
   cursor: pointer;
-  transition: opacity 0.15s ease, background-color 0.15s ease;
+  transition: opacity 0.15s ease;
 }
 
 .btn-primary:hover:not(:disabled) {

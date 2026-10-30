@@ -1,13 +1,8 @@
-/* ==========================================================================
-   MODAL DE AUDITORIA & HISTÓRICO DE LOGS
-   Design System: #000080 (Primary), #71226B (Accent), #0D0D11 (Base Text)
-   ========================================================================== */
-
 .modal-logs-dialog {
   background-color: #FFFFFF;
   border-radius: 8px;
-  width: 55vw;
-  min-width: 760px;
+  width: 60vw;
+  min-width: 840px;
   max-width: 95vw;
   max-height: 88vh;
   box-shadow: 0 20px 45px rgba(13, 13, 17, 0.25);
@@ -22,11 +17,14 @@
   border-bottom: 1px solid var(--color-border, #E5E7EB);
   display: flex;
   align-items: center;
+  justify-content: space-between;
   gap: 14px;
+  flex-wrap: wrap;
 }
 
 .logs-search {
   flex: 1;
+  min-width: 240px;
 }
 
 .logs-search input {
@@ -39,21 +37,32 @@
   color: var(--color-base, #0D0D11);
   outline: none;
   background-color: #FFFFFF;
+  box-sizing: border-box;
 }
 
 .logs-search input:focus {
   border-color: var(--color-primary, #000080);
 }
 
+.logs-select-group {
+  display: flex;
+  gap: 10px;
+}
+
 .logs-filter-select select {
   height: 36px;
-  padding: 0 10px;
+  padding: 0 12px;
   border: 1px solid var(--color-border, #E5E7EB);
   border-radius: 6px;
   font-size: 13px;
   color: var(--color-base, #0D0D11);
   background-color: #FFFFFF;
   outline: none;
+  cursor: pointer;
+}
+
+.logs-filter-select select:focus {
+  border-color: var(--color-primary, #000080);
 }
 
 .logs-table-container {
@@ -105,7 +114,7 @@
   color: var(--color-primary, #000080);
 }
 
-/* Badges Cromáticos por Categoria */
+/* Badges Cromáticos */
 .log-badge {
   display: inline-block;
   font-size: 10px;
@@ -181,4 +190,23 @@
   display: inline-flex;
   align-items: center;
   gap: 6px;
+  background-color: var(--color-primary, #000080);
+  color: #FFFFFF;
+  border: none;
+  border-radius: 6px;
+  padding: 0 16px;
+  height: 36px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: opacity 0.15s ease;
+}
+
+.btn-export-txt:hover {
+  opacity: 0.92;
+}
+
+.btn-export-txt:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
 }

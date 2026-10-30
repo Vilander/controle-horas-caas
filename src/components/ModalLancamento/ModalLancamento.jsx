@@ -1,14 +1,16 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { supabase } from '../../lib/supabaseClient';
 import { useAuth } from '../../context/AuthContext';
+import { logAuditEvent } from '../../services/auditService';
 import './ModalLancamento.css';
 
 export function ModalLancamento({ isOpen, client, activities, onClose, onEntryCreated }) {
-  const { user } = useAuth();
+  const { user, profile } = useAuth();
   
-  // Data de hoje em YYYY-MM-DD
-  const today = new Date().toISOString().split('T')[0];
+  // Data atual local em YYYY-MM-DD
+  const today = new Date().toLocaleDateString('en-CA');
 
+  const [availableActivities, setAvailableActivities] = useState(activities || []);
   const [activityId, setActivityId] = useState('');
   const [date, setDate] = useState(today);
   const [startTime, setStartTime] = useState('08:00');
@@ -17,12 +19,48 @@ export function ModalLancamento({ isOpen, client, activities, onClose, onEntryCr
   const [loading, setLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState('');
 
-  // Define a atividade inicial caso nenhuma esteja selecionada
-  React.useEffect(() => {
-    if (activities && activities.length > 0 && !activityId) {
-      setActivityId(activities[0].id);
+  // Sincroniza e valida as atividades sempre que o modal abre ou o cliente muda
+  useEffect(() => {
+    if (!isOpen) {
+      setActivityId('');
+      setErrorMsg('');
+      setDescription('');
+      setLoading(false);
+      return;
     }
-  }, [activities, activityId]);
+
+    let isMounted = true;
+
+    async function syncClientActivities() {
+      if (!client?.id) return;
+
+      try {
+        const { data, error } = await supabase
+          .from('activities')
+          .select('id, name')
+          .eq('client_id', client.id)
+          .order('created_at', { ascending: true });
+
+        if (isMounted) {
+          if (!error && data && data.length > 0) {
+            setAvailableActivities(data);
+            setActivityId(data[0].id); // Garante a seleção de um ID real e existente deste cliente
+          } else {
+            setAvailableActivities([]);
+            setActivityId('');
+          }
+        }
+      } catch (err) {
+        console.error('Erro ao sincronizar atividades do cliente:', err);
+      }
+    }
+
+    syncClientActivities();
+
+    return () => {
+      isMounted = false;
+    };
+  }, [isOpen, client?.id]);
 
   // Cálculo da duração e valor financeiro em tempo real
   const { durationFormatted, decimalHours, subtotal, isValidInterval } = useMemo(() => {
@@ -65,6 +103,13 @@ export function ModalLancamento({ isOpen, client, activities, onClose, onEntryCr
       return;
     }
 
+    // Validação preventiva: certifica que o activityId selecionado pertence à lista ativa
+    const selectedAct = availableActivities.find((a) => a.id === activityId);
+    if (!selectedAct) {
+      setErrorMsg('A atividade selecionada não é válida para este cliente. Por favor, selecione novamente.');
+      return;
+    }
+
     if (!isValidInterval) {
       setErrorMsg('A hora final deve ser posterior à hora inicial.');
       return;
@@ -72,16 +117,20 @@ export function ModalLancamento({ isOpen, client, activities, onClose, onEntryCr
 
     setLoading(true);
     try {
-      // Criação das datas completas em ISO UTC
-      const startDateTime = new Date(`${date}T${startTime}:00`).toISOString();
-      const endDateTime = new Date(`${date}T${endTime}:00`).toISOString();
+      // Decomposição local segura de data e hora para evitar divergências de fuso horário
+      const [sH, sM] = startTime.split(':').map(Number);
+      const [eH, eM] = endTime.split(':').map(Number);
+      const [year, month, day] = date.split('-').map(Number);
+
+      const startDateTime = new Date(year, month - 1, day, sH, sM, 0).toISOString();
+      const endDateTime = new Date(year, month - 1, day, eH, eM, 0).toISOString();
 
       const { data, error } = await supabase
         .from('time_entries')
         .insert([
           {
             activity_id: activityId,
-            user_id: user.id,
+            user_id: user?.id,
             started_at: startDateTime,
             ended_at: endDateTime,
             origin: 'manual',
@@ -92,6 +141,26 @@ export function ModalLancamento({ isOpen, client, activities, onClose, onEntryCr
         .single();
 
       if (error) throw error;
+
+      // Registro na trilha de auditoria
+      const operatorName = profile?.full_name || user?.user_metadata?.full_name || user?.email?.split('@')[0] || 'Usuário';
+
+      await logAuditEvent({
+        userId: user?.id,
+        userName: operatorName,
+        action: 'TIME_MANUAL_ENTRY',
+        entityType: 'time_entry',
+        entityId: data?.id,
+        clientName: client?.name,
+        details: {
+          activity_name: selectedAct?.name || 'Atividade',
+          data: date,
+          hora_inicio: startTime,
+          hora_fim: endTime,
+          duracao: durationFormatted,
+          descricao: description.trim() || null,
+        },
+      });
 
       setDescription('');
       onEntryCreated(data);
@@ -132,10 +201,10 @@ export function ModalLancamento({ isOpen, client, activities, onClose, onEntryCr
               onChange={(e) => setActivityId(e.target.value)}
               required
             >
-              {activities.length === 0 ? (
+              {availableActivities.length === 0 ? (
                 <option value="">Nenhuma atividade cadastrada</option>
               ) : (
-                activities.map((act) => (
+                availableActivities.map((act) => (
                   <option key={act.id} value={act.id}>
                     {act.name}
                   </option>
@@ -225,7 +294,7 @@ export function ModalLancamento({ isOpen, client, activities, onClose, onEntryCr
               <button
                 type="submit"
                 className="btn-primary"
-                disabled={loading || !isValidInterval || activities.length === 0}
+                disabled={loading || !isValidInterval || availableActivities.length === 0}
               >
                 {loading ? 'Salvando...' : 'Salvar lançamento'}
               </button>

@@ -1,8 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { supabase } from '../../lib/supabaseClient';
+import { useAuth } from '../../context/AuthContext';
+import { logAuditEvent } from '../../services/auditService';
 import './ModalAtividade.css';
 
 export function ModalAtividade({ isOpen, client, onClose, onActivityCreated }) {
+  const { user, profile } = useAuth();
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
   const [profiles, setProfiles] = useState([]);
@@ -38,6 +41,7 @@ export function ModalAtividade({ isOpen, client, onClose, onActivityCreated }) {
 
     setLoading(true);
     try {
+      // 1. Cria a atividade no Supabase
       const { data: newAct, error } = await supabase
         .from('activities')
         .insert([
@@ -52,6 +56,7 @@ export function ModalAtividade({ isOpen, client, onClose, onActivityCreated }) {
 
       if (error) throw error;
 
+      // 2. Vincula os responsáveis selecionados
       if (selectedUserIds.length > 0) {
         const rows = selectedUserIds.map((uid) => ({
           activity_id: newAct.id,
@@ -59,6 +64,31 @@ export function ModalAtividade({ isOpen, client, onClose, onActivityCreated }) {
         }));
         await supabase.from('activity_assignees').insert(rows);
       }
+
+      // 3. Registro cirúrgico na trilha de auditoria
+      const operatorName =
+        profile?.full_name ||
+        user?.user_metadata?.full_name ||
+        user?.email?.split('@')[0] ||
+        'Usuário';
+
+      const selectedNames = profiles
+        .filter((p) => selectedUserIds.includes(p.id))
+        .map((p) => p.full_name);
+
+      await logAuditEvent({
+        userId: user?.id,
+        userName: operatorName,
+        action: 'ACTIVITY_CREATE',
+        entityType: 'activity',
+        entityId: newAct.id,
+        clientName: client.name,
+        details: {
+          nome: newAct.name,
+          descricao: newAct.description || 'Sem descrição',
+          responsaveis: selectedNames.length > 0 ? selectedNames : ['Não atribuído'],
+        },
+      });
 
       setName('');
       setDescription('');

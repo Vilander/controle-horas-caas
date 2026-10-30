@@ -2,6 +2,8 @@ import React, { useState, useEffect, useRef } from 'react';
 import { supabase } from '../../lib/supabaseClient';
 import { useAuth } from '../../context/AuthContext';
 import { ModalDetalhesCliente } from '../../components/ModalDetalhesCliente/ModalDetalhesCliente';
+import { ModalAvisoStatusCliente } from '../../components/ModalAvisoStatus/ModalAvisoStatusCliente';
+import { logAuditEvent } from '../../services/auditService';
 import './DetalheCliente.css';
 
 export function DetalheCliente({ 
@@ -14,17 +16,25 @@ export function DetalheCliente({
   onDeleteActivity,
   onOpenEditClientModal
 }) {
-  const { user, isAdmin } = useAuth();
+  const { user, profile, isAdmin } = useAuth();
   const [activities, setActivities] = useState([]);
   const [activeTimerEntry, setActiveTimerEntry] = useState(null);
   const [activeTimerSeconds, setActiveTimerSeconds] = useState(0);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   
-  // Estado para controlar abertura do modal de detalhes
   const [isDetailsModalOpen, setIsDetailsModalOpen] = useState(false);
+  const [isStatusWarningOpen, setIsStatusWarningOpen] = useState(false);
 
   const timerIntervalRef = useRef(null);
+
+  const operatorName =
+    profile?.full_name ||
+    user?.user_metadata?.full_name ||
+    user?.email?.split('@')[0] ||
+    'Usuário';
+
+  const isOperacaoBloqueada = client.status === 'inativo' || client.status === 'finalizado';
 
   const formatHMS = (totalSeconds) => {
     const h = Math.floor(totalSeconds / 3600);
@@ -94,7 +104,7 @@ export function DetalheCliente({
         onActivitiesLoaded(decorated);
       }
     } catch (err) {
-      console.error('Erro ao carregar detalhes do cliente:', err.message);
+      console.error('Erro ao carregar atividades do cliente:', err.message);
     } finally {
       setLoading(false);
     }
@@ -131,10 +141,15 @@ export function DetalheCliente({
   }, [activeTimerEntry]);
 
   const handleStartTimer = async (activityId) => {
+    if (isOperacaoBloqueada) {
+      setIsStatusWarningOpen(true);
+      return;
+    }
+
     try {
       const { data: openEntries } = await supabase
         .from('time_entries')
-        .select('id')
+        .select('id, activity_id')
         .is('ended_at', null);
 
       if (openEntries && openEntries.length > 0) {
@@ -143,22 +158,50 @@ export function DetalheCliente({
             .from('time_entries')
             .update({ ended_at: new Date().toISOString() })
             .eq('id', entry.id);
+
+          await logAuditEvent({
+            userId: user?.id,
+            userName: operatorName,
+            action: 'TIMER_PAUSE',
+            entityType: 'time_entry',
+            entityId: entry.id,
+            clientName: client.name,
+            details: { motivo: 'Pausa automática por alternância de cronômetro' },
+          });
         }
       }
 
-      const { error } = await supabase
+      const { data: newEntry, error } = await supabase
         .from('time_entries')
         .insert([
           {
             activity_id: activityId,
-            user_id: user.id,
+            user_id: user?.id,
             started_at: new Date().toISOString(),
             ended_at: null,
             origin: 'timer',
           },
-        ]);
+        ])
+        .select()
+        .single();
 
       if (error) throw error;
+
+      const actRef = activities.find((a) => a.id === activityId);
+      await logAuditEvent({
+        userId: user?.id,
+        userName: operatorName,
+        action: 'TIMER_START',
+        entityType: 'time_entry',
+        entityId: newEntry?.id,
+        clientName: client.name,
+        details: {
+          activity_id: activityId,
+          activity_name: actRef?.name || 'Atividade',
+          started_at: newEntry?.started_at,
+        },
+      });
+
       await loadClientData();
     } catch (err) {
       alert('Erro ao iniciar cronômetro: ' + err.message);
@@ -178,10 +221,41 @@ export function DetalheCliente({
         .eq('id', targetId);
 
       if (error) throw error;
+
+      await logAuditEvent({
+        userId: user?.id,
+        userName: operatorName,
+        action: 'TIMER_PAUSE',
+        entityType: 'time_entry',
+        entityId: targetId,
+        clientName: client.name,
+        details: {
+          activity_id: activeTimerEntry?.activity_id,
+          activity_name: activeTimerEntry?.activities?.name,
+          ended_at: new Date().toISOString(),
+        },
+      });
+
       await loadClientData();
     } catch (err) {
       alert('Erro ao pausar cronômetro: ' + err.message);
     }
+  };
+
+  const handleInterceptNewActivity = () => {
+    if (isOperacaoBloqueada) {
+      setIsStatusWarningOpen(true);
+      return;
+    }
+    onOpenNewActivity(client);
+  };
+
+  const handleInterceptManualEntry = () => {
+    if (isOperacaoBloqueada) {
+      setIsStatusWarningOpen(true);
+      return;
+    }
+    onOpenManualEntry(client);
   };
 
   const totalClientSeconds = activities.reduce((acc, act) => acc + act.totalSeconds, 0);
@@ -210,7 +284,7 @@ export function DetalheCliente({
       <header className="detalhe-header">
         <div>
           <button className="btn-breadcrumb-back" onClick={onBack}>
-            &larr; Clientes
+            ← Clientes
           </button>
           <div className="detalhe-title-row">
             <h1 className="detalhe-client-name">{client.name}</h1>
@@ -232,15 +306,18 @@ export function DetalheCliente({
                 {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(hourlyRate)}/h
               </>
             )}
+            {' '}&bull;{' '}
+            <span className={`status-pill-header status-${client.status || 'ativo'}`}>
+              • {client.status === 'ativo' ? 'Ativo' : client.status === 'inativo' ? 'Inativo' : 'Finalizado'}
+            </span>
           </p>
         </div>
 
-        {/* Substituição: Botão "Detalhes do cliente" exclusivo para Administradores */}
         {isAdmin && (
           <div className="detalhe-header-actions">
             <button 
               type="button" 
-              className="btn-primary btn-generate-report"
+              className="btn-primary"
               onClick={() => setIsDetailsModalOpen(true)}
             >
               Detalhes do cliente
@@ -249,10 +326,10 @@ export function DetalheCliente({
         )}
       </header>
 
-      {/* Cards de Métricas */}
+      {/* Cards de Indicadores Superiores */}
       <div className={`detalhe-metrics-grid ${isAdmin ? 'three-cards' : 'two-cards'}`}>
         <div className="detalhe-metric-card">
-          <span className="metric-label">Horas encerradas (total geral)</span>
+          <span className="metric-label">Horas encerradas no mês</span>
           <div className="metric-value">{formatHoursMinutes(totalClientSeconds)}</div>
           <span className="metric-footer">{totalClientDecimalHours.toFixed(2)}h registradas</span>
         </div>
@@ -274,19 +351,19 @@ export function DetalheCliente({
             <span className="metric-footer">
               Pacote: {contractHours.toFixed(0)}h contratadas
               {isAdmin && isOverLimit && (
-                ` • Faturar R$ ${(((exceededSeconds / 3600) * hourlyRate)).toFixed(2)} extras`
+                ` • Adicional: R$ ${((exceededSeconds / 3600) * hourlyRate).toFixed(2)}`
               )}
             </span>
           </div>
         ) : (
           isAdmin && (
             <div className="detalhe-metric-card">
-              <span className="metric-label">Valor total das horas encerradas</span>
+              <span className="metric-label">Valor das horas encerradas</span>
               <div className="metric-value" style={{ color: 'var(--color-primary, #000080)' }}>
                 {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(totalFinancialValue)}
               </div>
               <span className="metric-footer">
-                {totalClientDecimalHours.toFixed(2)}h &times; R$ {hourlyRate.toFixed(2)}/h
+                {totalClientDecimalHours.toFixed(2)} horas &times; R$ {hourlyRate.toFixed(2)}/h
               </span>
             </div>
           )
@@ -300,13 +377,12 @@ export function DetalheCliente({
           <span className="metric-footer">
             {activeTimerEntry 
               ? `Início às ${formatTimeOnly(activeTimerEntry.started_at)} • não contabilizado` 
-              : 'Ainda não contabilizado'
-            }
+              : 'Ainda não contabilizado'}
           </span>
         </div>
       </div>
 
-      {/* Faixa de Destaque da Sessão Ativa */}
+      {/* Faixa de Sessão Ativa */}
       {activeTimerEntry && (
         <div className="active-timer-banner">
           <div className="timer-banner-info">
@@ -329,7 +405,7 @@ export function DetalheCliente({
         </div>
       )}
 
-      {/* Barra de Ações Operacionais */}
+      {/* Toolbar Operacional */}
       <div className="detalhe-toolbar">
         <div className="toolbar-search">
           <input
@@ -344,14 +420,14 @@ export function DetalheCliente({
           <button 
             type="button" 
             className="btn-secondary" 
-            onClick={() => onOpenManualEntry(client)}
+            onClick={handleInterceptManualEntry}
           >
             Lançamento manual
           </button>
           <button 
             type="button" 
             className="btn-primary" 
-            onClick={() => onOpenNewActivity(client)}
+            onClick={handleInterceptNewActivity}
           >
             + Nova atividade
           </button>
@@ -439,17 +515,14 @@ export function DetalheCliente({
         )}
 
         <footer className="detalhe-table-footer">
-          <span>
-            {filteredActivities.length} atividade(s) &bull;{' '}
-            {activities.reduce((acc, a) => acc + a.entryCount, 0)} apontamentos encerrados
-          </span>
+          <span>{filteredActivities.length} atividade(s) &bull; {activities.reduce((acc, a) => acc + a.entryCount, 0)} apontamentos encerrados</span>
           <span className="total-encerrado-tag">
             Total encerrado: <strong>{formatHoursMinutes(totalClientSeconds)}</strong>
           </span>
         </footer>
       </div>
 
-      {/* Modal de Detalhes Cadastrais e Exportação em PDF */}
+      {/* Modal de Detalhes Administrativos */}
       <ModalDetalhesCliente
         isOpen={isDetailsModalOpen}
         onClose={() => setIsDetailsModalOpen(false)}
@@ -457,6 +530,34 @@ export function DetalheCliente({
         activities={activities}
         totalSeconds={totalClientSeconds}
         isAdmin={isAdmin}
+      />
+
+      {/* Modal de Aviso de Bloqueio Operacional */}
+      <ModalAvisoStatusCliente
+        isOpen={isStatusWarningOpen}
+        client={client}
+        onClose={() => setIsStatusWarningOpen(false)}
+        onReactivate={async () => {
+          await supabase
+            .from('clients')
+            .update({ status: 'ativo', is_active: true })
+            .eq('id', client.id);
+
+          client.status = 'ativo';
+          client.is_active = true;
+
+          await logAuditEvent({
+            userId: user?.id,
+            userName: operatorName,
+            action: 'CLIENT_ACTIVATE',
+            entityType: 'client',
+            entityId: client.id,
+            clientName: client.name,
+            details: { motivo: 'Reativação rápida realizada na folha de atividades' },
+          });
+
+          loadClientData();
+        }}
       />
     </div>
   );
